@@ -120,8 +120,8 @@ class inactivePlayer {
     this.elmId = elmId;
     this.posX = posX;
     this.posY = posY;
-    this.width = 24;
-    this.height = 36;
+    this.width = 30;
+    this.height = 60;
     this.elm;
   }
   createElement() {
@@ -165,8 +165,8 @@ class inactivePlayer {
         this.posY = posY; // y position
         this.isFacing = isFacing; //direction facing
         this.isMe = isMe; // true or false
-        this.width = 24;
-        this.height = 36;
+        this.width = 30;
+        this.height = 60;
         this.elm; 
         // this.isActive;
         this.inventory = [];
@@ -208,10 +208,10 @@ class inactivePlayer {
       if(this.isMe === true) {
         faceDown= true;
         this.isFacing = "down";
-          this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
+          this.elm.style.backgroundImage = 'url(assets/player/player-resTest01.png)';
         socket.emit('playerIsFacing', player); 
       } else {
-        this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
+        this.elm.style.backgroundImage = 'url(assets/player/player-resTest01.png)';
       }
     }
     stepRight(){
