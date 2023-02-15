@@ -15,9 +15,9 @@ app.get('/', (req, res) => {
 });
 
 players = {};
-inactiveElements = [];
+sprites = [];
 
-let numOfInactiveElements = 5;
+let numOfSprites = 5;
 
 function randomPosition() {
   let random = parseInt( (50 + Math.random()*200) );
@@ -26,7 +26,7 @@ function randomPosition() {
   return random
 }
 
-for(let i=0; i< numOfInactiveElements; i++) {
+for(let i=0; i< numOfSprites; i++) {
   npc = {
     elmId: 'npc' + (i + 1),
     posX: randomPosition(),
@@ -36,53 +36,64 @@ for(let i=0; i< numOfInactiveElements; i++) {
     isActive: false,
   };
 
-  inactiveElements.push(npc);
+  sprites.push(npc);
 };
 
-// console.log(inactiveElements)
+// console.log(sprites)
 
 io.on('connection', function (socket) {
   console.log('a user connected: ', socket.id);
-  // emit the non-active player elements to the map
-  socket.emit('npcElements', inactiveElements);
-  // emit current players to all users on the main page
-  socket.emit('currentPlayers', players);
 
-  socket.on('startGame', function (game) {
+  // emit the non-active player elements to the map
+  socket.emit('npcElements', sprites);
+
+  // emit current players to all users on the main page
+  console.log("length of players object", Object.keys(players).length);
+
+  console.log("game started", Object.keys(players));
+
+  if(Object.keys(players).length > 0) {
+    socket.emit('currentPlayers', players);
+  }
+ 
+  socket.on('startGame', function () {
+    let awakenSprite = sprites.find(sprite => sprite.isActive === false);
+    console.log("Loading this sprite:", awakenSprite.elmId);
+
     players[socket.id] = {
-      playerId: socket.id
+      playerId: socket.id,
+      elmId: awakenSprite.elmId,
     };
 
-    socket.emit('currentPlayers', players);
+    console.log("game started", Object.keys(players));
+    
+    awakenSprite.isActive = true;
+
+    io.emit('currentPlayers', players);
+    socket.emit('newPlayer', players[socket.id]);
   })
 
-  socket.on('activateNPC', function (npcInfo) {
-    let activatedNPC = inactiveElements.find(npc => npc.elmId === npcInfo.elmId);
-    console.log('element to remove: ', activatedNPC);
+  // socket.on('playerIsFacing', function (player) {
+  //   players[socket.id].isFacing = player.isFacing;
+  //   // console.log(players[socket.id]);
+
+  //   socket.broadcast.emit('playerToFace', players[socket.id]);
+  // });
   
-    socket.broadcast.emit('newPlayer', ({Id: npcInfo.playerId, Elm: activatedNPC}));
-  });
+  // socket.on('playerMovement', function (movementData) {
+  //   // console.log(movementData);
+  //   players[socket.id].x = movementData.x;
+  //   players[socket.id].y = movementData.y;
 
-  socket.on('playerIsFacing', function (player) {
-    players[socket.id].isFacing = player.isFacing;
-    console.log(players[socket.id]);
-
-    socket.broadcast.emit('playerToFace', players[socket.id]);
-  });
-  
-  socket.on('playerMovement', function (movementData) {
-    // console.log(movementData);
-    players[socket.id].x = movementData.x;
-    players[socket.id].y = movementData.y;
-
-    // emit a message to all players about the player that moved
-    socket.broadcast.emit('playerMoved', players[socket.id]);
-    // console.log(players);
-  });
+  //   // emit a message to all players about the player that moved
+  //   socket.broadcast.emit('playerMoved', players[socket.id]);
+  //   // console.log(players);
+  // });
 
   // when a player disconnects, remove them from our players object
   socket.on('disconnect', function () {
     console.log('user disconnected: ', socket.id);
+
     delete players[socket.id];
     // emit a message to all players to remove this player
     io.emit('disconnectUser', socket.id);

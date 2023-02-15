@@ -3,7 +3,7 @@
 let mapWidth = 300;
 let mapHeight = 300;
 
-let numOfInactiveElements = 5;
+let numOfSpriteElms = 5;
 let minDist = 50;
 
 let mainContainer = document.createElement('div');
@@ -30,7 +30,7 @@ gameMap.style.height = mapHeight + 'px';
 let player; 
 
 let activePlayers = [];
-let inactiveElements = [];
+let spriteElm = [];
 let activeObjects = [];
 
 const leftKey = "ArrowLeft";
@@ -106,7 +106,7 @@ let socket = io();
 mainContainer.append(startMenu, gameMap);
 
 startButton.addEventListener('click', () => {
-  if(inactiveElements.length === 0) {
+  if(spriteElm.length === 0) {
     console.log("max players")
   } else {
     socket.emit('startGame');
@@ -115,7 +115,7 @@ startButton.addEventListener('click', () => {
 });
 
   // Game Objects & Players
-class inactivePlayer {
+class Sprite {
   constructor(elmId, posX, posY) {
     this.elmId = elmId;
     this.posX = posX;
@@ -144,14 +144,16 @@ class inactivePlayer {
       this.elm.append(nameTag);
   }
 }
+  // [1A] Receives element locations from server
   socket.on('npcElements', function (npcInfo) {
       for(let i = 0; i < npcInfo.length; i++) {
-        if(npcInfo[i].isActive === false) {
-          npcElm = new inactivePlayer (npcInfo[i].elmId, npcInfo[i].posX, npcInfo[i].posY);
+        // if(npcInfo[i].isActive === false) {
+          // generate
+          npcElm = new Sprite (npcInfo[i].elmId, npcInfo[i].posX, npcInfo[i].posY);
           npcElm.createElement();
 
-          inactiveElements.push(npcElm);
-        }
+          spriteElm.push(npcElm);
+        // }
       }
   });
 
@@ -178,40 +180,40 @@ class inactivePlayer {
       if(this.isMe === true) {
         faceRight = true;
         this.isFacing = "right";
-          this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
+          // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
         socket.emit('playerIsFacing', player); 
       } else {
-        this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
+        // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
       }
     }
     isFacingLeft() {
       if(this.isMe === true) {
         faceLeft = true;
         this.isFacing = "left";
-          this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
+          // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
         socket.emit('playerIsFacing', player); 
       } else {
-        this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
+        // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
       }
     }
     isFacingUp() {
       if(this.isMe === true) {
         faceUp = true;
         this.isFacing = "up";
-          this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
+          // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
         socket.emit('playerIsFacing', player); 
       } else {
-        this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
+        // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
       }
     }
     isFacingDown() {
       if(this.isMe === true) {
         faceDown= true;
         this.isFacing = "down";
-          this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
+          // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
         socket.emit('playerIsFacing', player); 
       } else {
-        this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
+        // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
       }
     }
     stepRight(){
@@ -308,7 +310,7 @@ class inactivePlayer {
           this.elm.append(nameTag)
     }
   };
-
+    // [1B] Receives current players from server
     socket.on('currentPlayers', function (players) {
       console.log('players received: ', players);
       Object.keys(players).forEach(function (id) {
@@ -317,22 +319,21 @@ class inactivePlayer {
           // create an asset for the main player
           if(activePlayers.indexOf(socket.id) === -1) {
             console.log("adding main player");
-
-            player = new Player (inactiveElements[0].elmId, players[id].playerId, inactiveElements[0].posX, inactiveElements[0].posY, "down", true);
-            // emit activated npc element 'player' to server
-            socket.emit('activateNPC', player);
+            // Player(Div Elemenet Id, Player's socket.id, X, Y, facing, is.me = true)
+            player = new Player (players[id].elmId, players[id].playerId, spriteElm[0].posX, spriteElm[0].posY, "down", true);
+            
 
             // remove the activated npc element from array & game map
-            let el = document.getElementById(inactiveElements[0].elmId);
+            let el = document.getElementById(spriteElm[0].elmId);
               el.remove(gameMap);
-              inactiveElements.splice(inactiveElements[0], 1);
+              spriteElm.splice(spriteElm[0], 1);
             
             // create element and push to activePlayers array
             player.createElement();
             activePlayers.push(player);
 
             console.log(players[id].playerId + ' added to ', activePlayers);
-            console.log('npc elements: ', inactiveElements);
+            console.log('npc elements: ', spriteElm);
           }
           // or them:
         } else {
@@ -341,47 +342,51 @@ class inactivePlayer {
           console.log(activePlayers.indexOf(players[id].playerId));
 
           if(activePlayers.indexOf(socket.id) === -1) {
-            console.log("adding other player");
+            console.log("adding other player on currentPlayers");
 
-            player = new Player (inactiveElements[0].elmId, players[id].playerId, inactiveElements[0].posX, inactiveElements[0].posY, "down", false);
+            player = new Player (players[id].elmId, players[id].playerId, spriteElm[0].posX, spriteElm[0].posY, "down", false);
 
             // emit activated npc element 'player' to server
-            socket.emit('activateNPC', player);
+            // socket.emit('activateNPC', player);
 
             // remove the activated npc element from array & game map
-            let el = document.getElementById(inactiveElements[0].elmId);
+            let el = document.getElementById(spriteElm[0].elmId);
               el.remove(gameMap);
-              inactiveElements.splice(inactiveElements[0], 1);
+              spriteElm.splice(spriteElm[0], 1);
 
             player.createElement();
-            activePlayers.push(player)
+            activePlayers.push(player);
 
             console.log('active players: ', activePlayers);
-            console.log('inactive players: ', inactiveElements);
+            console.log('inactive players: ', spriteElm);
           }
         }
       });
     });
 
-    socket.on('newPlayer', function (playerInfo) {
-      console.log("A new player has joined");
-      // console log received information
-      console.log(playerInfo.Id, playerInfo.Elm);
+     socket.on('newPlayer', function (playerInfo) {
+     });
 
-      let inactiveElm = playerInfo.Elm;
+
+    // socket.on('newPlayer', function (playerInfo) {
+    //   console.log("A new player has joined");
+    //   // console log received information
+    //   console.log(playerInfo.Id, playerInfo.Elm);
+
+    //   let inactiveElm = playerInfo.Elm;
     
-      let player = new Player (inactiveElm.elmId, playerInfo.Id, inactiveElm.posX, inactiveElm.posY, "down", false);
+    //   let player = new Player (inactiveElm.elmId, playerInfo.Id, inactiveElm.posX, inactiveElm.posY, "down", false);
 
-      player.createElement();
-      activePlayers.push(player);
+    //   player.createElement();
+    //   activePlayers.push(player);
       
-      let el = document.getElementById(inactiveElm.elmId);
-        el.remove(gameMap);
-        inactiveElements.splice(playerInfo.elmId, 1);
+    //   let el = document.getElementById(inactiveElm.elmId);
+    //     el.remove(gameMap);
+    //     spriteElm.splice(playerInfo.elmId, 1);
 
-      console.log('active players on newPlayer: ', activePlayers);
-      console.log('inactive players on newPlayer: ', inactiveElements);
-    });
+    //   console.log('active players on newPlayer: ', activePlayers);
+    //   console.log('inactive players on newPlayer: ', spriteElm);
+    // });
 
     socket.on('playerMoved', function (playerInfo) {
       // console.log("a player moved");
