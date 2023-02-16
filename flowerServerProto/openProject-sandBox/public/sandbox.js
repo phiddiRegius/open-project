@@ -3,6 +3,8 @@
 // GLOBAL VARIABLES
 
 let player;
+let npc;
+let object;
 
 let mapWidth = 300;
 let mapHeight = 300;
@@ -25,18 +27,26 @@ gameContainer.append(gameMap);
 
 //
 
-let spd = document.getElementById('velOne');
-let sprint = document.getElementById('velTwo');
+options = {
+    spd: 3,
+}
 
-let sprTemp = document.getElementById('sprite-options');
+let submit = document.getElementById('submit');
+
+let spriteOptions = document.getElementById('spriteOptions');
+
+let inputSpd = document.getElementById('inputSpd');
+let inputSprt = document.getElementById('inputSprt');
+
+submit.addEventListener("click", () => {
+    
+    
+    let adjustSpd = inputSpd.value;
+    options.spd = Number(adjustSpd);
 
 
-function optionsForm() {
-    console.log(sprTemp.value)
-    console.log(spd.value);
-    console.log(sprint.value);
-  }
-
+    player.updateSprite(options);
+});
 
 
 const leftKey = "ArrowLeft";
@@ -99,7 +109,6 @@ if(faceLeft === true || faceRight === true || faceUp === true || faceDown === tr
 }
 }
 
-
 // PLAYER CLASS
 
 class Player {
@@ -115,9 +124,10 @@ class Player {
         this.width = 20;
         this.height = 20;
         this.elm; 
+
         // this.isActive;
         // this.inventory = [];
-        this.speed = 3; // # of px moved
+        this.speed = 2; // # of px moved
     }
     projectile() {
         
@@ -221,11 +231,16 @@ class Player {
         this.elm.style.top = this.posY  + 'px';
         }
     }
+    updateSprite(options) {
+        this.speed = options.spd;
+    }
     createElement() {
         // if me...
         this.elm = document.createElement('div');
         if(this.isMe === true) {
             this.elm.setAttribute('class', 'mainPlayer');
+
+
         // if not me...
         } else {
             this.elm.setAttribute('class', 'otherPlayer');
@@ -243,6 +258,77 @@ class Player {
     }
 };
 
+class NPC {
+    constructor(elmId, posX, posY, isFacing) {
+        this.elmId = elmId; 
+        this.posX = posX; 
+        this.posY = posY; 
+        this.isFacing = isFacing; 
+        this.width = 60;
+        this.height = 100;
+        this.collBttm;
+        this.collTop;
+        this.collWidth = this.width;
+        this.collHeight = this.height * 0.25;
+        this.elm; 
+
+    }
+    createElement() {
+        this.elm = document.createElement('div');
+        this.elm.setAttribute('class', 'spriteTemp02');
+
+        this.elm.style.width = this.width + 'px';
+        this.elm.style.height = this.height + 'px';
+
+        this.collTop = document.createElement('div');
+        this.collTop.setAttribute('class', 'top');
+
+        this.collTop.style.width =   this.collWidth + 'px';
+        this.collTop.style.height = this.collHeight + 'px';
+
+        this.collBttm = document.createElement('div');
+            this.collBttm.setAttribute('class', 'bottom');
+
+        this.collBttm.style.width =   this.collWidth + 'px';
+        this.collBttm.style.height = this.collHeight + 'px';
+
+        this.elm.append(this.collTop, this.collBttm);
+
+        gameMap.append(this.elm)
+    }
+}
+
+class worldObjects {
+    constructor(elmId, posX, posY) {
+        this.elmId = elmId; 
+        this.posX = posX; 
+        this.posY = posY; 
+        this.width = 31;
+        this.height = 27;
+    }
+    createElement() {
+        this.elm = document.createElement('div');
+        this.elm.setAttribute('class', 'object');
+
+        this.elm.style.width = this.width + 'px';
+        this.elm.style.height = this.height + 'px';
+
+        this.elm.style.left = this.posX + 'px';
+        this.elm.style.top = this.posY  + 'px';
+
+        gameMap.append(this.elm)
+    }
+}
+
 
 player = new Player ('sprite01', 'player01', 100, 100, "down", true);
 player.createElement();
+
+
+npc = new NPC ('sprite02', 'npc01', 300, 300, "down");
+npc.createElement();
+
+
+
+object = new worldObjects ('cactus', 200, 200);
+object.createElement();

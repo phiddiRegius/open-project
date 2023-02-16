@@ -8,25 +8,38 @@
     <title>Document</title>
 </head>
 <body>
-    <div id="optionsMenu">
-        <form name="Options">
-        <label for="sprite-options">Sprite Template</label>
-        <select name="sprite-options" id="sprite-options">
-            <option value="animOne">Sprite 01</option>
-            <option value="animTwo">Sprite 02</option>
+
+    <div id="menu">
+
+        <div id="optionsMenu">
+            <div class="tab">Options</div>
+
+            <label for="sprite-options">Sprite Template</label>
+        <select name="sprite-options" id="spriteOptions">
+            <option value="temp01" class="options">Sprite 01</option>
+            <option value="temp02" class="options">Sprite 02</option>
             <!-- <option value="animThree">Sprite 03</option>
             <option value="animFour">Sprite 04</option> -->
         </select>
-
+        <br>
         <label for="speed">Speed</label>
-        <input type="number" name="speed" id="velOne"/> 
-        <label for="speed">Sprint</label>
-        <input type="number" name="sprint" id="velTwo"/> 
-   
-        </form>
+        <input type="value" name="speed" size="2" id="inputSpd"/> 
+        <label for="sprint">Sprint</label>
+        <input type="value" name="sprint" size="2" id="inputSprt"/> 
 
-        <button id="submitOptions" onclick="optionsForm();">Submit</button>
-      </div>
+        <br>
+        <button id="submit">Submit</button>
+        </div>
+
+        <div id="currentSettings">
+            <div class="tab">Current Settings</div>
+          </div>
+    </div>
+  
+
+        
+
+     
 
 <script src="sandbox.js"></script>
 </body>
