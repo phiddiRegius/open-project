@@ -1,0 +1,118 @@
+:root {
+    --colorrOne: 142, 202, 230;
+    --colorTwo: 251, 133, 0;
+    --colorThree: 231, 198, 255;
+    --colorFour: 132, 165, 157;
+    --colorFive: 242, 132, 130;
+}
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    /* overflow-y: scroll; */
+}
+p {
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+}
+#gameContent {
+    width: 100vw;
+    height: 100vh;
+}
+#menu {
+    position: absolute;
+    width: 90vw;
+    /* height: 100px; */
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, 0);
+    margin-top: 20px;
+    padding: 20px;
+    
+    z-index: 9999;
+    background-color: rgba(41, 41, 41, 1);
+    border-radius: 5px;
+     /*  */
+     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+     font-variant: all-small-caps;
+     color: rgba(247, 247, 247, 1);
+}
+#optionsMenu {
+    float: left;
+    margin-right: 20px;
+}
+input, select {
+    margin-right: 20px;
+    margin-bottom: 10px;;
+}
+.tab {
+    margin-bottom: 20px;;
+}
+#gameMap {
+    position: relative;
+    /* width: 4000px;
+    height: 4000px; */
+    background-color: aliceblue;
+    background-image: url(assets/world/grassMapMed.png);
+    background-repeat: no-repeat;
+    /* overflow: hidden; */
+    top: 0px;
+    left: 0px;
+
+    margin-left: 50%;
+    margin-top: 50vh;
+    /* transform: translate(-50%, -50%); */
+}
+.object {
+    position: absolute;
+    background-image: url(assets/world/scene/cactus-test.png);
+}
+.inactivePlayer {
+    position: absolute;
+    background-color: aqua;
+}
+.mainPlayer {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    background-color: rgb(159, 218, 71);
+}
+.spriteTemp02 {
+    background-color: rgba(217, 150, 245, 0.70);
+    position: fixed;
+    /* width: 70px;
+    height: 110px; */
+    z-index: 7;
+  }
+.top {
+    background-color: rgb(210, 239, 87);
+    /* position: absolute; */
+    top: 0;
+    left: 0;
+    /* width: 70px;
+    height: 30px; */
+    z-index: 6;
+}
+.front {
+    background-color: rgba(217, 150, 245, 0.70);
+    /* width: 70px;
+    height: 80px; */
+    z-index: 5;
+}
+.bottom {
+    background-color: rgb(210, 239, 87, 0.60);
+    /* width: 70px;
+    height: 30px; */
+    /* position: absolute; */
+    left: 0;
+    bottom: 0;
+    z-index: 4;
+}
+  
+.otherPlayer {
+    position: absolute;
+    background-color: rgba(154, 108, 196);
+}

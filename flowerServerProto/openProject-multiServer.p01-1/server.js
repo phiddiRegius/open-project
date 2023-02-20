@@ -18,6 +18,7 @@ players = {};
 sprites = [];
 
 let numOfSprites = 5;
+let minDist = 100;
 
 function randomPosition() {
   let random = parseInt( (50 + Math.random()*200) );
@@ -26,12 +27,68 @@ function randomPosition() {
   return random
 }
 
+function getNewLocation(){
+  let d = 999999999;
+  let loc = [];
+  let count = 0;
+  while(d < minDist || d > 999999){
+    d = 999999999;
+    loc[0] = randomPosition();
+    loc[1] = randomPosition();
+    // if(Object.keys(players).length < 1){
+    //   break
+    // }
+    // console.log("new x", loc[0], "y", loc[1], sprites.length)
+    for(const sprite in sprites) {
+      let a = loc[0] - sprites[sprite].posX;
+        let b = loc[1] - sprites[sprite].posY;
+      let playerDist = Math.sqrt( a*a + b*b );
+      // console.log("playerDist", playerDist, "d", d);
+      if(playerDist < d) {
+        d = playerDist;
+      }
+    }
+    count ++;
+    if(count>40) break;
+  }
+  return loc
+}
+
+// function checkPosition() {
+//   let loc = [];
+
+//   loc[0] = randomPosition();
+//   loc[1] = randomPosition();
+
+//   for(const sprite in sprites) {
+//     let a = loc[0] - sprites[sprite].posX;
+//     let b = loc[1] - sprites[sprite].posY;
+//     let playerDist = Math.sqrt( a*a + b*b );
+//     // console.log("playerDist", playerDist, "d", d);
+//     if(playerDist < d) {
+//       d = playerDist;
+//     }
+//   }
+
+//   if((x2 > x1 - playerWidth - minDist) && 
+//   (x2 <= x1 + playerWidth + minDist) && 
+//   (y2 > y1 - playerHeight - minDist) && 
+//   (y2 <= y1 + playerHeight + minDist)) {
+//       console.log("player is less than minimum distance");
+//       checkPosition();
+//   }
+// }
+
+
 for(let i=0; i< numOfSprites; i++) {
+  let loc = getNewLocation();
+      console.log("using loc:", loc);
+
   npc = {
     elmId: 'sprite' + (i + 1),
     playerId: 'sprite',
-    posX: randomPosition(),
-    posY: randomPosition(),
+    posX: loc[0],
+    posY: loc[1],
     width: 24,
     height: 36,
     isActive: false,
@@ -54,6 +111,7 @@ io.on('connection', function (socket) {
   socket.emit('currentPlayers', players);
 
   socket.on('startGame', function () {
+
     let inactiveSprite = sprites.find(sprite => sprite.isActive === false);
     // can I change this to a random sprite based on the ones that are not active?
     console.log("Loading this sprite:", inactiveSprite.elmId);
