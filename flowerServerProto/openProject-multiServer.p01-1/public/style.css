@@ -1,0 +1,68 @@
+:root {
+    --colorrOne: 142, 202, 230;
+    --colorTwo: 251, 133, 0;
+    --colorThree: 231, 198, 255;
+    --colorFour: 132, 165, 157;
+    --colorFive: 242, 132, 130;
+}
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    /* overflow-y: scroll; */
+}
+p {
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+}
+#mainContent {
+    width: 100vw;
+    height: 100vh;
+}
+#startMenu {
+    position: absolute;
+    width: 100vw;
+    height: 100px;
+    bottom: 0;
+    left: 0;
+    z-index: 9999;
+    background-color: rgba(152, 196, 234, 0.349);
+}
+#startButton {
+    position: relative;
+    width: 50px;
+    height: 40px;
+    margin: 20px;
+}
+#gameMap {
+    position: relative;
+    /* width: 4000px;
+    height: 4000px; */
+    background-color: aliceblue;
+    background-image: url(assets/world/grassMapMed.png);
+    background-repeat: no-repeat;
+    /* overflow: hidden; */
+    top: 0px;
+    left: 0px;
+
+    margin-left: 50%;
+    margin-top: 50vh;
+    /* transform: translate(-50%, -50%); */
+}
+.sprite {
+    position: absolute;
+    background-color: aqua;
+}
+.mainPlayer {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    background-color: rgb(159, 218, 71);
+}
+.otherPlayer {
+    position: absolute;
+    background-color: rgba(154, 108, 196);
+}

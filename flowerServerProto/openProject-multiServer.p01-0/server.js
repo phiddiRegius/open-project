@@ -50,8 +50,6 @@ io.on('connection', function (socket) {
   // emit current players to all users on the main page
   console.log("length of players object", Object.keys(players).length);
 
-  console.log("game started", Object.keys(players));
-
   if(Object.keys(players).length > 0) {
     socket.emit('currentPlayers', players);
   }
@@ -63,14 +61,16 @@ io.on('connection', function (socket) {
     players[socket.id] = {
       playerId: socket.id,
       elmId: awakenSprite.elmId,
+      posX: awakenSprite.posX,
+      posY: awakenSprite.posY,
     };
 
     console.log("game started", Object.keys(players));
     
     awakenSprite.isActive = true;
 
-    io.emit('currentPlayers', players);
-    socket.emit('newPlayer', players[socket.id]);
+    socket.emit('currentPlayers', players);
+    socket.broadcast.emit('newPlayer', players[socket.id]);
   })
 
   // socket.on('playerIsFacing', function (player) {
@@ -96,7 +96,10 @@ io.on('connection', function (socket) {
 
     delete players[socket.id];
     // emit a message to all players to remove this player
-    io.emit('disconnectUser', socket.id);
+    if(Object.keys(players).length > 0) {
+      io.emit('disconnectUser', socket.id);
+    }
+    
   });
 
 });

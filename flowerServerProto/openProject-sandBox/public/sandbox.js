@@ -121,8 +121,12 @@ class Player {
         this.posY = posY; // y position
         this.isFacing = isFacing; //direction facing
         this.isMe = isMe; // true or false
-        this.width = 20;
-        this.height = 20;
+        this.width = 60;
+        this.height = 100;
+        this.collBttm;
+        this.collTop;
+        this.collWidth = this.width;
+        this.collHeight = this.height * 0.25;
         this.elm; 
 
         // this.isActive;
@@ -237,8 +241,27 @@ class Player {
     createElement() {
         // if me...
         this.elm = document.createElement('div');
+        
         if(this.isMe === true) {
-            this.elm.setAttribute('class', 'mainPlayer');
+            // this.elm.setAttribute('class', 'mainPlayer');
+            this.elm.setAttribute('class', 'spriteTemp02');
+
+            this.elm.style.width = this.width + 'px';
+            this.elm.style.height = this.height + 'px';
+    
+            this.collTop = document.createElement('div');
+            this.collTop.setAttribute('class', 'top');
+    
+            this.collTop.style.width =   this.collWidth + 'px';
+            this.collTop.style.height = this.collHeight + 'px';
+    
+            this.collBttm = document.createElement('div');
+                this.collBttm.setAttribute('class', 'bottom');
+    
+            this.collBttm.style.width =   this.collWidth + 'px';
+            this.collBttm.style.height = this.collHeight + 'px';
+    
+            this.elm.append(this.collTop, this.collBttm);
 
 
         // if not me...
@@ -247,9 +270,8 @@ class Player {
         }
         // element id 
         this.elm.id = this.playerId;
-        
-        this.elm.style.width = this.width + 'px';
-        this.elm.style.height = this.height + 'px';
+
+       
 
         this.updatePosition();
 
