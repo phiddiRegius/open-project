@@ -6,6 +6,8 @@ let player;
 let npc;
 let object;
 
+let activePlayers = [];
+
 let mapWidth = 300;
 let mapHeight = 300;
 
@@ -67,6 +69,7 @@ event.preventDefault();
 
   if(keyCode == leftKey) { 
     player.isFacingLeft();
+    console.log('left key is pressed');
     if(keyCode == leftKey && faceLeft === true) {
       player.stepLeft();
     }
@@ -207,19 +210,19 @@ class Player {
         // check if player is **WITHIN map bounds
         if(nextStepX >= 0 && nextStepX < mapWidth - this.width && nextStepY >= 0 && nextStepY < mapHeight - this.height) {
         // check for other players
-            // for(let i = 0; i < activePlayers.length; i++) {
-            // // main player
-            // if(activePlayers[i].playerId != this.playerId) {
-            // // other
-            // let other = activePlayers[i];
-            // if((other.posX > nextStepX - other.width) && 
-            //     (other.posX <= nextStepX + this.width) && 
-            //     (other.posY > nextStepY - other.height) && 
-            //     (other.posY <= nextStepY + this.height) ) {
-            //         return true // is colliding with other player
-            //     }
-            // }   
-            // }
+            for(let i = 0; i < activePlayers.length; i++) {
+            // main player
+            if(activePlayers[i].playerId != this.playerId) {
+            // other
+            let other = activePlayers[i];
+            if((other.posX > nextStepX - other.width) && 
+                (other.posX <= nextStepX + this.width) && 
+                (other.posY > nextStepY - other.height) && 
+                (other.posY <= nextStepY + this.height) ) {
+                    return true // is colliding with other player
+                }
+            }   
+            }
             return false // is not colliding with other player
         } else {
             return true
@@ -245,25 +248,6 @@ class Player {
         if(this.isMe === true) {
             // this.elm.setAttribute('class', 'mainPlayer');
             this.elm.setAttribute('class', 'spriteTemp02');
-
-            this.elm.style.width = this.width + 'px';
-            this.elm.style.height = this.height + 'px';
-    
-            this.collTop = document.createElement('div');
-            this.collTop.setAttribute('class', 'top');
-    
-            this.collTop.style.width =   this.collWidth + 'px';
-            this.collTop.style.height = this.collHeight + 'px';
-    
-            this.collBttm = document.createElement('div');
-                this.collBttm.setAttribute('class', 'bottom');
-    
-            this.collBttm.style.width =   this.collWidth + 'px';
-            this.collBttm.style.height = this.collHeight + 'px';
-    
-            this.elm.append(this.collTop, this.collBttm);
-
-
         // if not me...
         } else {
             this.elm.setAttribute('class', 'otherPlayer');
@@ -271,7 +255,22 @@ class Player {
         // element id 
         this.elm.id = this.playerId;
 
-       
+        this.elm.style.width = this.width + 'px';
+        this.elm.style.height = this.height + 'px';
+
+        this.collTop = document.createElement('div');
+        this.collTop.setAttribute('class', 'top');
+
+        this.collTop.style.width = this.collWidth + 'px';
+        this.collTop.style.height = this.collHeight + 'px';
+
+        this.collBttm = document.createElement('div');
+            this.collBttm.setAttribute('class', 'bottom');
+
+        this.collBttm.style.width =   this.collWidth + 'px';
+        this.collBttm.style.height = this.collHeight + 'px';
+
+        this.elm.append(this.collTop, this.collBttm);
 
         this.updatePosition();
 
@@ -297,19 +296,22 @@ class NPC {
     }
     createElement() {
         this.elm = document.createElement('div');
-        this.elm.setAttribute('class', 'spriteTemp02');
+        this.elm.setAttribute('class', 'spriteTemp03');
+
+        this.elm.style.left = this.posX + 'px';
+        this.elm.style.top = this.posY  + 'px';
 
         this.elm.style.width = this.width + 'px';
         this.elm.style.height = this.height + 'px';
 
         this.collTop = document.createElement('div');
-        this.collTop.setAttribute('class', 'top');
+        this.collTop.setAttribute('class', 'top3');
 
         this.collTop.style.width =   this.collWidth + 'px';
         this.collTop.style.height = this.collHeight + 'px';
 
         this.collBttm = document.createElement('div');
-            this.collBttm.setAttribute('class', 'bottom');
+            this.collBttm.setAttribute('class', 'bottom3');
 
         this.collBttm.style.width =   this.collWidth + 'px';
         this.collBttm.style.height = this.collHeight + 'px';
@@ -346,11 +348,13 @@ class worldObjects {
 player = new Player ('sprite01', 'player01', 100, 100, "down", true);
 player.createElement();
 
+activePlayers.push(player);
 
-npc = new NPC ('sprite02', 'npc01', 300, 300, "down");
+npc = new NPC ('sprite02', 'npc01', 20, 30, "down");
 npc.createElement();
 
+activePlayers.push(npc);
 
 
-object = new worldObjects ('cactus', 200, 200);
-object.createElement();
+// object = new worldObjects ('cactus', 200, 200);
+// object.createElement();
