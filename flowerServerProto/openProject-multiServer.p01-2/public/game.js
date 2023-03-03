@@ -1,528 +1,376 @@
 // game.js
 
 // GLOBAL 
+// let debug = true;
 
-let debug = true;
-let foundIndex = -1;
-
-let player; 
+let mainPlayerInstance;
+let guestPlayerInstance;
 let sprite;
 let el;
 
-let worldObjects = [];
-let sprites = [];
+let gameObjects = [];
+let gameSprites = [];
 let activePlayers = [];
+
+// gameAssets = gameAssets.concat(activePlayers);
+// let gameAssets = [...sprites, ...npcSprites, ...activePlayers]; 
+// let gameAssets = [];
 
 let numOfSpriteElms = 5;
 let minDist = 50;
 
 // DIV ELEMENTS & GUI
-
 let mapWidth = 300;
 let mapHeight = 300;
-
 let mainContainer = document.createElement('div');
-  mainContainer.setAttribute('id', 'mainContainer');
-  mainContainer.style.width = window.innerWidth;
-  mainContainer.style.width = window.innerHeight;
-
-  document.body.append(mainContainer);
+mainContainer.setAttribute('id', 'mainContainer');
+mainContainer.style.width = window.innerWidth;
+mainContainer.style.width = window.innerHeight;
+document.body.append(mainContainer);
   
 let startMenu = document.createElement('div');
 startMenu.setAttribute('id', 'startMenu');
-
 let startButton = document.createElement('button');
-  startButton.setAttribute('id', 'startButton');
-  startButton.innerHTML = 'Start';
-
-  startMenu.append(startButton);
+startButton.setAttribute('id', 'startButton');
+startButton.innerHTML = 'Start';
+startMenu.append(startButton);
 
 let gameMap = document.createElement('div');
 gameMap.setAttribute('id', 'gameMap');
 gameMap.style.width = mapWidth  + 'px';
 gameMap.style.height = mapHeight + 'px';
 
-// DIRECTIONAL FUNCTIONS
+// DEBUG PANEL
+// add toggle and popup to check properties of instances in different arrays
 
-const leftKey = "ArrowLeft";
-const rightKey = "ArrowRight";
-const upKey = "ArrowUp";
-const downKey = "ArrowDown";
+// variable for each key
+let LEFT_KEY = "ArrowLeft";
+let RIGHT_KEY = "ArrowRight";
+let UP_KEY = "ArrowUp";
+let DOWN_KEY = "ArrowDown";
 
-let faceLeft;
-let faceRight;
-let faceUp;
-let faceDown;
+// Set initial facing directions to false
+let isFacingLeft = false;
+let isFacingRight = false;
+let isFacingUp = false;
+let isFacingDown = false;
 
-window.onkeydown = function(event) {
-const keyCode = event.key;
-event.preventDefault();
+// Add an event listener for keydown events
+window.addEventListener("keydown", function(event) {
+  // Get the pressed key's code
+  let keyCode = event.key;
 
-  checkIsFacing();
+  // Prevent default browser behavior for the pressed key
+  event.preventDefault();
 
-  if(keyCode == leftKey) { 
-    player.isFacingLeft();
-    if(keyCode == leftKey && faceLeft === true) {
-      player.stepLeft();
-    }
-  } else if(keyCode == rightKey) { 
-    player.isFacingRight();
-    if(keyCode == rightKey && faceRight === true) {
-      player.stepRight();
-    }
-  } else if(keyCode == upKey) { 
-    player.isFacingUp();
-    if(keyCode == upKey && faceUp === true) {
-      player.stepUp();
-    }
-  } else if(keyCode == downKey) { 
-    player.isFacingDown();
-    if(keyCode == downKey && faceDown === true) {
-      player.stepDown();
-    }
-  }
-}
-function checkIsFacing() {
-  if(faceLeft === true || faceRight === true || faceUp === true || faceDown === true ) {
-    if(faceDown === true) {
-        faceLeft = false;
-        faceRight = false;
-        faceUp = false;
-    } else if(faceUp === true) {
-        faceLeft = false;
-        faceRight = false;
-        faceDown = false;
-    } else if(faceLeft === true) {
-        faceRight = false;
-        faceDown = false;
-        faceUp = false;
-    } else if(faceRight === true) {
-        faceLeft= false;
-        faceDown = false;
-        faceUp = false;
+  // Check if the player is already facing a direction
+  if (isFacingLeft || isFacingRight || isFacingUp || isFacingDown) {
+    // Clear the facing direction if the player is moving in a different direction
+    if (keyCode === LEFT_KEY && !isFacingLeft) {
+      isFacingRight = false;
+      isFacingUp = false;
+      isFacingDown = false;
+    } else if (keyCode === RIGHT_KEY && !isFacingRight) {
+      isFacingLeft = false;
+      isFacingUp = false;
+      isFacingDown = false;
+    } else if (keyCode === UP_KEY && !isFacingUp) {
+      isFacingLeft = false;
+      isFacingRight = false;
+      isFacingDown = false;
+    } else if (keyCode === DOWN_KEY && !isFacingDown) {
+      isFacingLeft = false;
+      isFacingRight = false;
+      isFacingUp = false;
     }
   }
-}
 
-function spriteMoveToRandomlyWhileTrue() {
-
-}
-
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
+  // Set the facing direction based on the pressed key
+  if (keyCode === LEFT_KEY) {
+    isFacingLeft = true;
+    player.stepLeft();
+  } else if (keyCode === RIGHT_KEY) {
+    isFacingRight = true;
+    player.stepRight();
+  } else if (keyCode === UP_KEY) {
+    isFacingUp = true;
+    player.stepUp();
+  } else if (keyCode === DOWN_KEY) {
+    isFacingDown = true;
+    player.stepDown();
+  }
+});
 
 // play game
 let socket = io();
-
 mainContainer.append(startMenu, gameMap);
 
 startButton.addEventListener('click', () => {
-  if(activePlayers.length === 5) {
-    console.log("max players")
+  if (activePlayers.length === 5) {
+    console.log("max players");
   } else {
     socket.emit('startGame');
     startButton.style.display = "none";
   }
 });
 
-  // Game Objects & Players
-// class Sprite {
-//   constructor(elmId, posX, posY) {
-//     this.elmId = elmId;
-//     this.posX = posX;
-//     this.posY = posY;
-//     this.width = 24;
-//     this.height = 36;
-//     this.elm;
-//   }
-//   createElement() {
-//     this.elm = document.createElement('div');
-//       this.elm.setAttribute('class', 'inactivePlayer');
-//       this.elm.id =  this.elmId;
 
-//       this.elm.style.width = this.width + 'px';
-//       this.elm.style.height = this.height + 'px';
-
-//       this.elm.style.left = this.posX + 'px';
-//       this.elm.style.top = this.posY  + 'px';
-
-//       // append inactive player element to the map
-//       gameMap.append(this.elm);
-
-//       //name tag for debug tracking
-//       let nameTag = document.createElement("p");
-//       nameTag.innerHTML = this.elmId;
-//       this.elm.append(nameTag);
-//   }
-// }
-
-class Player {
-  constructor(elmId, playerId, posX, posY, width, height, isFacing, isSprite, isMe) {
-      // this.posX = 0; // for debugging
-      // this.posY = 0; // for debugging
-      this.elmId = elmId; 
-      this.playerId = playerId; 
-      this.posX = posX; 
-      this.posY = posY; 
-      this.width = width;
-      this.height = height;
-      this.isFacing = isFacing; 
-      this.isSprite = isSprite;
-      this.isMe = isMe;  
-      //
-      this.elm; 
-      this.collider;
-      this.colliderWidth = this.width;
-      this.colliderHeight = this.height * 0.25;
-      // this.inventory = [];
-      this.speed = 3; // # of px moved
-  }
-  // moveSpriteDiv(div) {
-  //   const direction = randomInt(0, 3); // 0 = up, 1 = down, 2 = right, 3 = left
-  //   switch (direction) {
-  //     case 0: // up
-  //     div.posY = div.posY - div.speed;
-  //     this.updatePosition();
-  //       break;
-  //     case 1: // down
-  //     div.posY = div.posY - div.speed;
-  //     this.updatePosition();
-  //       break;
-  //     case 2: // right
-  //     div.posY = div.posY - div.speed;
-  //     this.updatePosition();
-  //       break;
-  //     case 3: // left
-  //     div.posY = div.posY - div.speed;
-  //     this.updatePosition();
-  //       break;
-  //   }
-  // }
-  // updateSprite() {
-  //   for(let i = 0; i < sprites.length; i++) {
-  //     if(sprites[i].playerId == 'sprite') {
-  //       console.log(sprites[i].elm);
-
-  //       let div = document.getElementById(sprites[i].elmId);
-  //       console.log(div);
-  //       this.moveSpriteDiv(div);
-  //     }
-
-  //   }
-  // }
-  // PLAYER MOVEMENT & FACING FUNCTIONS
-    // 
-  isFacingRight() {
-    if(this.isMe === true) {
-      faceRight = true;
-      this.isFacing = "right";
-        // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
-      socket.emit('playerIsFacing', player); 
-    } else {
-      // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
-    }
-  }
-  isFacingLeft() {
-    if(this.isMe === true) {
-      faceLeft = true;
-      this.isFacing = "left";
-        // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
-      socket.emit('playerIsFacing', player); 
-    } else {
-      // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
-    }
-  }
-  isFacingUp() {
-    if(this.isMe === true) {
-      faceUp = true;
-      this.isFacing = "up";
-        // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
-      socket.emit('playerIsFacing', player); 
-    } else {
-      // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
-    }
-  }
-  isFacingDown() {
-    if(this.isMe === true) {
-      faceDown= true;
-      this.isFacing = "down";
-        // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
-      socket.emit('playerIsFacing', player); 
-    } else {
-      // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
-    }
-  }
-  stepRight(){
-    // check if step would collide
-    if( this.isColliding(this.posX + this.speed, this.posY) == true ){
-
-    }else{
-      this.posX = this.posX + this.speed;
-      socket.emit('playerMovement', ({x: this.posX, y: this.posY})); 
-      this.updatePosition();
-    }
-  }
-  stepLeft() {
-    if( this.isColliding(this.posX - this.speed, this.posY) == true ){
-    } else {
-      this.posX = this.posX - this.speed;
-      socket.emit('playerMovement', ({x: this.posX, y: this.posY})); 
-      this.updatePosition();
-    }
-  }
-  stepUp() {
-    if( this.isColliding(this.posX, this.posY - this.speed) == true ){
-    } else {
-      this.posY = this.posY - this.speed;
-      socket.emit('playerMovement', ({x: this.posX, y: this.posY})); 
-      this.updatePosition();
-    }
-  }
-  stepDown() {
-    if( this.isColliding(this.posX, this.posY + this.speed) == true ){
-    } else {
-      this.posY = this.posY + this.speed;
-      socket.emit('playerMovement', ({x: this.posX, y: this.posY})); 
-      this.updatePosition();
-    }
-  }
-  isColliding(nextStepX, nextStepY) {
-    // check if player is **WITHIN map bounds
-    if(nextStepX >= 0 && nextStepX < mapWidth - this.width && nextStepY >= 0 && nextStepY < mapHeight - this.height) {
-    // check for other players
-      for(let i = 0; i < activePlayers.length; i++) {
-        // main player
-        if(activePlayers[i].playerId != this.playerId) {
-        // other
-        let other = activePlayers[i];
-        if((other.posX > nextStepX - other.width) && 
-            (other.posX <= nextStepX + this.width) && 
-            (other.posY > nextStepY - other.height) && 
-            (other.posY <= nextStepY + this.height) ) {
-              return true // is colliding with other player
-          }
-        }   
-      }
-      return false // is not colliding with other player
-    } else {
-      return true
-    }
+// Game Objects & Players
+class gameAsset {
+  static instances = [];
+  constructor(elmId, objectType, posX, posY, width, height) {
+    // this.elm = document.getElementById(elmId);
+    this.elmId = elmId;
+    this.posX = posX;
+    this.posY = posY;
+    this.width = width;
+    this.height = height;
+    //
+    // this.objectType = ""; // player or element
+    this.debugTag = document.createElement("p");
+    // this.setTag();
+    // this.getElm = this.getElm.bind(this);
+    // this.removeElm = this.removeElm.bind(this);
+    gameAsset.instances.push(this);
   }
   updatePosition() {
-    // if me:
-    if(this.isMe === true) {
-      gameMap.style.left = - this.posX  + 'px';
-      gameMap.style.top = - this.posY  + 'px';
-    } else {
-      this.elm.style.left = this.posX + 'px';
-      this.elm.style.top = this.posY  + 'px';
+    if (this.elm) {
+      this.elm.style.left = `${this.posX}px`;
+      this.elm.style.top = `${this.posY}px`;
     }
   }
-  updateWorldObjects() {
-    // push activePlayers to worldObjects array?
+  createInstance() {
+    const elm = this.createElement();
+    const instance = {
+      elmId: this.elmId,
+      posX: this.posX,
+      posY: this.posY,
+      width: this.width,
+      height: this.height,
+      debugTag: this.debugTag,
+      updatePosition: this.updatePosition.bind(this),
+      getElm: this.getElm.bind(this),
+      removeElm: this.removeElm.bind(this)
+    };
+    // this.setObjectType(this.elmId, true);
+    return instance;
   }
-  createElement() {
-    this.elm = document.createElement('div');
-    this.collider = document.createElement('div');
+  // createInstance() {
+  //   const elm = this.createElement();
+  //   if (this.debug === true) {
+  //     this.debugTag.innerHTML = this.objectType;
+  //     elm.append(this.debugTag);
+  //   }
+  //   return this;
+  // }
+  createElement(debug) {
+    const elementCreators = {
+      worldObject: () => this.createObject("world"),
+      interactiveObject: () => this.createObject("interactive"),
+      staticSpriteObject: () => this.createObject("staticSprite"),
+      item: () => this.createItem(),
+      gameSprite: () => this.createGameSprite(),
+      mainPlayer: () => this.createPlayer("main"),
+      guestPlayer: () => this.createPlayer("guest")
+    };
+    const className = this.constructor.name;
+    const elementCreator = elementCreators[className];
 
-    // name tag for debug tracking elements
-    let nameTag = document.createElement("p");
-    nameTag.innerHTML = this.elmId;
-
-    if(this.isSprite === true) {
-      this.elm.id = this.elmId;
-      this.elm.setAttribute('class', 'sprite');
-      this.collider.setAttribute('class', 'colliderS');
-    } else {
-      // if me....
-      if(this.isMe === true) {
-        this.elm.setAttribute('class', 'mainPlayer');
-        this.collider.setAttribute('class', 'collider1');
-      // if not me...
-      } else {
-        this.elm.setAttribute('class', 'otherPlayer');
-        this.collider.setAttribute('class', 'collider2');
-      }
-      this.elm.id = this.playerId;
-      nameTag.innerHTML = this.playerId;
+    if (!elementCreator) {
+      throw new Error("Invalid class");
     }
-      if(debug === true) {
-        this.elm.append(nameTag)
-        // this.posX = 0;
-        // this.posY = 0;
-      }
 
-      this.elm.style.width = this.width + 'px';
-      this.elm.style.height = this.height + 'px';
+    // const nameTag = document.createElement("p");
+    // nameTag.innerHTML = this.elmId;
 
-      this.collider.style.width = this.colliderWidth + 'px';
-      this.collider.style.height = this.colliderHeight + 'px';
+    const elm = elementCreator();
+    elm.style.left = `${this.posX}px`;
+    elm.style.top = `${this.posY}px`;
+    elm.style.width = `${this.width}px`;
+    elm.style.height = `${this.height}px`;
+    elm.innerHTML = `<p class="debugTag">${this.elmId}</p>`;
+    elm.setAttribute("id", this.elmId);
+    this.elm = elm;
+    this.updatePosition();
 
-      this.elm.append(this.collider);
-      gameMap.append(this.elm);
+    if (debug === true) {
+      // this.debugTag = document.createElement("p");
+      // this.debugTag.className = "debug";
+      this.debugTag.innerHTML = this.objectType;
+      elm.append(this.debugTag);
+    }
 
-      this.updatePosition();
-      // this.updateWorldObjects();
+    gameMap.append(elm);
+
+    return elm;
   }
-};
-
-class Sprite extends Player {
-  constructor(elmId, playerId, posX, posY, width, height, isFacing, isSprite, isMe) {
-    super(elmId, playerId, posX, posY, width, height, isFacing, isSprite, isMe)
-    // this.posX = 0; // for debugging
-    // this.posY = 0; // for debugging
-    // this.elmId = elmId; 
-    // this.playerId = playerId; 
-    // this.posX = posX; 
-    // this.posY = posY; 
-    // this.width = width;
-    // this.height = height;
-    // this.isFacing = isFacing; 
-    // this.isSprite = isSprite;
-    this.isMe = isMe;  
-    //
-    this.elm; 
-    this.collider;
-    this.colliderWidth = this.width;
-    this.colliderHeight = this.height * 0.25;
-    // this.inventory = [];
-    this.speed = 3; // # of px moved
-
-    this.moveInterval = setInterval(() => {
-      if (this.playerId === 'sprite') {
-        this.generateRandomMovement();
-      }
-    }, 1000);
+  getElm() {
+    return document.getElementById(this.elmId);
   }
-  generateRandomMovement() {
-    if (this.playerId !== "sprite") {
-      return;
+  removeElm() {
+    const elm = this.getElm();
+    if (elm) {
+      elm.remove();
     }
-    const directions = ["left", "right", "up", "down"];
-    const randomDirection = directions[Math.floor(Math.random() * directions.length)];
-    switch (randomDirection) {
-      case 'up':
-        if (this.posY - this.speed >= 0) {
-          this.posY -= this.speed;
-          this.elm.style.top = `${this.posY}px`;
-        }
-        break;
-      case 'down':
-        if (this.posY + this.speed <= mapHeight - this.height) {
-          this.posY += this.speed;
-          this.elm.style.top = `${this.posY}px`;
-        }
-        break;
-      case 'left':
-        if (this.posX - this.speed >= 0) {
-          this.posX -= this.speed;
-          this.elm.style.left = `${this.posX}px`;
-        }
-        break;
-      case 'right':
-        if (this.posX + this.speed <= mapWidth - this.width) {
-          this.posX += this.speed;
-          this.elm.style.left = `${this.posX}px`;
-        }
-        break;
-      default:
-        break;
-    }
+  }
+  createObject(objectType) {
+    let worldObjectElm = document.createElement("div");
+    worldObjectElm.classList.add("worldObject");
+    worldObjectElm.classList.add(objectType + "Object");
+    return worldObjectElm;
+  }
+  createItem() {
+    let itemElm = document.createElement("div");
+    itemElm.classList.add("item");
+    return itemElm;
+  }
+  createGameSprite() {
+    let gameSpriteElm = document.createElement("div");
+    gameSpriteElm.classList.add("game-sprite");
+    return gameSpriteElm;
+  }
+  createPlayer(playerType) {
+    let playerElm = document.createElement("div");
+    playerElm.id = this.objectType;
+    // playerElm.classList.add("gameSprite");
+    playerElm.classList.add(playerType + "Player");
+    return playerElm;
   }
 }
 
-  // [1A] Receives element locations from server
-  socket.on('inactiveSprites', function (spriteInfo) {
-    for(let i = 0; i < spriteInfo.length; i++) {
-        // create instance 
-        // elmId, playerId, posX, posY, isFacing, isSprite, isMe
-        sprite = new Sprite (spriteInfo[i].elmId, 'sprite', spriteInfo[i].posX, spriteInfo[i].posY, spriteInfo[i].width, spriteInfo[i].height, 'down', true, false);
-          sprite.createElement();
-          sprites.push(sprite);
-          // console.log(sprites, ' :at inactiveSprites')
-    }
-});
+class worldObject extends gameAsset {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+    //
+    gameAsset.instances.push(this);
+  }
+}
+class interactiveObject extends worldObject {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+    this.canInteract = true;
+    //
+    gameAsset.instances.push(this);
+  }
+}
+class  staticSpriteObject extends interactiveObject {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+    this.canInteract = true;
+    //
+    gameAsset.instances.push(this);
+  }
+}
 
-  // [1B] Receives current players from server
-  socket.on('currentPlayers', function (players) {
-    // console.log('players received: ', players);
-    // console.log(activePlayers);
+class Item extends worldObject {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+    this.isCollectable = true;
+    //
+    gameAsset.instances.push(this);
+  }
 
-    Object.keys(players).forEach(function (id) {
-      // me:
-      // console.log(players[id].playerId, typeof players[id].playerId);
-      // console.log(socket.id, id)
-      if (players[id].playerId == socket.id) {
-        // console.log("main player?", players[id].playerId)
-        // create instance for main player
-        for (let i=0; i < activePlayers.length; i++) {
-          if (activePlayers[i].playerId == players[id].playerId) {
-            let foundIndex = i;
-            break;
-          }
-          console.log(foundIndex);
-          console.log(activePlayers);
-        } if (foundIndex === -1) {
-          // console.log("adding main player");
+}
 
-          let assignedSprite = sprites.find(sprite => sprite.elmId == players[id].elmId);
-            assignedSprite.playerId = players[id].playerId;
-            assignedSprite.isSprite = false;
-            assignedSprite.elm.remove(gameMap);
+class GameSprite extends gameAsset {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+    // this.objectType = objectType;
+    //
+    gameAsset.instances.push(this);
+  }
+  
+}
+class mainPlayer extends GameSprite {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+    this.isPlayer = true;
 
-          player = new Player (players[id].elmId, players[id].playerId, assignedSprite.posX, assignedSprite.posY, assignedSprite.width, assignedSprite.height, assignedSprite.isFacing, false, true);
-            player.createElement();
-            activePlayers.push(player);
+    gameAsset.instances.push(this);
+  }
+  updatePosition() {
+    gameMap.style.left = `${- this.posX}px`;
+    gameMap.style.top = `${- this.posY}px`;
 
-            console.log(sprites, ' :at mainplayer');
-        }
-        // or them:
-      } else {
-        // otherwise, create an other player
-        for (let i=0; i < activePlayers.length; i++) {
-          if (activePlayers[i].playerId == players[id].playerId) {
-            let foundIndex = i;
-            break;
-          }
-        } if (foundIndex === -1) {
-          console.log("adding other player on currentPlayers");
+  }
+}
 
-          let assignedSprite = sprites.find(sprite => sprite.elmId == players[id].elmId);
-            assignedSprite.playerId = players[id].playerId;
-            assignedSprite.isSprite = false;
-            assignedSprite.elm.remove(gameMap);
+class guestPlayer extends GameSprite {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+    this.isPlayer = true;
+    //
+    gameAsset.instances.push(this);
+  }
+}
 
-          player = new Player (players[id].elmId, players[id].playerId, assignedSprite.posX, assignedSprite.posY, assignedSprite.width, assignedSprite.height, assignedSprite.isFacing, false, false);
-            player.createElement();
-            activePlayers.push(player);
-
-            console.log(sprites, ' :at otherplayer');
-        }
-      }
+socket.on('gameObjects', function (objectInfo) {
+  objectInfo.forEach((info) => {
+        let { elmId, objectType, posX, posY, width, height } = info;
+        let newObject = new staticSpriteObject(elmId, objectType, posX, posY, width, height);
+        newObject.createElement();
+        
+        // sprite.createElement();
+        gameObjects.push(newObject);
     });
   });
 
-    socket.on('newPlayer', function (playerInfo) {
+  socket.on('currentPlayers', function (players) {
+    // Loop through each player in the list
+    Object.keys(players).forEach(function (playerId) {
+      // Check if this player is the main player (i.e. the player using this browser)
+      if (playerId == socket.id) {
+        // If the player is already in the list of active players, skip to the next player
+        let existingPlayerIndex = activePlayers.findIndex(player => player.objectType === playerId);
+        if (existingPlayerIndex >= 0) {
+          return;
+        }
+        console.log(`Adding mainPlayer-${playerId} to activePlayers`);
+          let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == players[playerId].elmId);
+            console.log(assignedSprite);
+            
+          mainPlayerInstance = new mainPlayer(players[playerId].elmId, playerId, assignedSprite.posX, assignedSprite.posY, assignedSprite.width, assignedSprite.height).createInstance();
+            console.log(playerId);
+            
+            mainPlayerInstance.updatePosition();
+            
+            console.log(mainPlayerInstance instanceof mainPlayer);
+          
+            activePlayers.push(mainPlayerInstance);
+            assignedSprite.removeElm(assignedSprite.elmId);
+         
+      } else {
+        // Otherwise, create a new Player object for another player
+        let existingPlayerIndex = activePlayers.findIndex(player => player.objectType === playerId);
+        if (existingPlayerIndex >= 0) {
+          return;
+        }
+        console.log(`Adding guestPlayer-${playerId} to activePlayers`);
+          // let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == players[playerId].elmId);
+          //   assignedSprite.removeElm(assignedSprite.elmId);
+          //   console.log(assignedSprite);
+          //   guestPlayerInstance = new mainPlayer(players[playerId].elmId, playerId, assignedSprite.posX, assignedSprite.posY, assignedSprite.width, assignedSprite.height).createInstance();
+          //     activePlayers.push(guestPlayerInstance);
+      }
+    });
+  });
+  socket.on('newPlayer', function (playerInfo) {
     console.log("A newPlayer has joined");
 
-    let assignedSprite = sprites.find(sprite => sprite.elmId == playerInfo.elmId);
-      assignedSprite.playerId = playerInfo.playerId;
-      assignedSprite.isSprite = false;
+    let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == playerInfo.elmId);
+      assignedSprite.objectType = playerInfo.playerId;
+      assignedSprite.isStatic = false;
       assignedSprite.elm.remove(gameMap);
 
-    player = new Player (playerInfo.elmId, playerInfo.playerId, assignedSprite.posX, assignedSprite.posY, assignedSprite.width, assignedSprite.height, assignedSprite.isFacing, false, false);
-      player.createElement();
-      activePlayers.push(player);
+      guestPlayer = new Player (playerInfo.elmId, playerInfo.playerId, assignedSprite.posX, assignedSprite.posY, assignedSprite.width, assignedSprite.height, assignedSprite.isFacing, false, false);
+      // guestPlayer.createElement();
+      activePlayers.push(guestPlayer);
 
       console.log(sprites, ' :at new player');
-    });
-  
+  });
   socket.on('playerToFace', function (playerInfo) {
-    let playerTurned = activePlayers.find(player => player.playerId == playerInfo.playerId);
-  
-    playerTurned.isFacing = playerInfo.isFacing;
+    let playerTurned = activePlayers.find(player => player.objectType == playerInfo.playerId);
+      playerTurned.isFacing = playerInfo.isFacing;
   
     if(playerInfo.isFacing == "right") {
       playerTurned.isFacingRight();
@@ -551,31 +399,25 @@ class Sprite extends Player {
   });
 
   socket.on('disconnectUser', function (playerId) {
-    // remove the div element of the disconnected player
-    for (let i=0; i < activePlayers.length; i++) {
-      if (activePlayers[i].playerId == playerId) {
-        // let foundIndex = i;
-        break;
-      }
+    console.log(`Player ${playerId} has disconnected`);
+    
+    let playerIndex = activePlayers.findIndex(player => player.playerId === playerId);
+    if (playerIndex === -1) {
+      console.log('No player to remove');
+      return;
     }
-    if (foundIndex === -1) {
-    // if(activePlayers.indexOf(playerId) === -1) {
-      console.log('No player to remove'); 
-    } else {
-        let disconnectedPlayer = activePlayers.find(player => player.playerId == playerId);
-        let assignedSprite = sprites.find(sprite => sprite.elmId == disconnectedPlayer.elmId);
-            assignedSprite.playerId = 'sprite';
-            assignedSprite.isSprite = true;
-        //update sprite location, sprite facing
-        gameMap.append(assignedSprite.elm);
-
-        // console.log(assignedSprite);
-        disconnectedPlayer.elm.remove(gameMap);
-        activePlayers.splice(disconnectedPlayer, 1);
-
-        console.log(sprites, ' :at disconnect');
-        console.log("A player has left the game");
-    }
+    
+    let disconnectedPlayer = activePlayers[playerIndex];
+    let assignedSprite = sprites.find(sprite => sprite.elmId === disconnectedPlayer.elmId);
+    
+    assignedSprite.playerId = 'sprite';
+    assignedSprite.isSprite = true;
+    
+    gameMap.append(assignedSprite.elm);
+    disconnectedPlayer.elm.remove(gameMap);
+    activePlayers.splice(playerIndex, 1);
+    
+    // console.log(sprites, ' :at disconnect');
   });
 
 

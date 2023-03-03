@@ -84,3 +84,11 @@ p {
     position: absolute;
     background-color: rgba(154, 108, 196);
 }
+.flower {
+    position: absolute;
+    background-color: rgb(224, 137, 218);
+}
+.slug {
+    position: absolute;
+    background-color: rgb(255, 187, 0);
+}

@@ -6,20 +6,23 @@ let debug = true;
 let foundIndex = -1;
 
 let player; 
+let flwr;
 let sprite;
 let el;
 
+let flowers = [];
 let worldObjects = [];
 let sprites = [];
 let activePlayers = [];
+let slugs = [];
 
 let numOfSpriteElms = 5;
 let minDist = 50;
 
 // DIV ELEMENTS & GUI
 
-let mapWidth = 300;
-let mapHeight = 300;
+let mapWidth = 400;
+let mapHeight = 400;
 
 let mainContainer = document.createElement('div');
   mainContainer.setAttribute('id', 'mainContainer');
@@ -112,6 +115,15 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Enter') {
+    console.log("enter pressed")
+    flowers.forEach(function(flower) {
+      player.collectFlower(flower);
+    });
+  }
+});
+
 
 // play game
 let socket = io();
@@ -127,39 +139,32 @@ startButton.addEventListener('click', () => {
   }
 });
 
+
+class gameAssets {
+  static instances = []
+  constructor(elmId, objectType, posX, posY, width, height) {
+    this.elmId = elmId;
+    this.objectType = objectType;
+    this.posX = posX;
+    this.posX = posX; 
+    this.posY = posY; 
+    this.width = width;
+    this.height = height;
+
+    this.speed = 3;
+    //
+    this.elm = document.createElement('div');
+    this.collider = document.createElement('div');
+    this.nameTag = document.createElement("p");
+    gameAssets.instances.push(this);
+  }
+  
+}
+
   // Game Objects & Players
-// class Sprite {
-//   constructor(elmId, posX, posY) {
-//     this.elmId = elmId;
-//     this.posX = posX;
-//     this.posY = posY;
-//     this.width = 24;
-//     this.height = 36;
-//     this.elm;
-//   }
-//   createElement() {
-//     this.elm = document.createElement('div');
-//       this.elm.setAttribute('class', 'inactivePlayer');
-//       this.elm.id =  this.elmId;
-
-//       this.elm.style.width = this.width + 'px';
-//       this.elm.style.height = this.height + 'px';
-
-//       this.elm.style.left = this.posX + 'px';
-//       this.elm.style.top = this.posY  + 'px';
-
-//       // append inactive player element to the map
-//       gameMap.append(this.elm);
-
-//       //name tag for debug tracking
-//       let nameTag = document.createElement("p");
-//       nameTag.innerHTML = this.elmId;
-//       this.elm.append(nameTag);
-//   }
-// }
-
-class Player {
+class Player extends gameAssets {
   constructor(elmId, playerId, posX, posY, width, height, isFacing, isSprite, isMe) {
+    super(elmId, posX, posY, width, height);
       // this.posX = 0; // for debugging
       // this.posY = 0; // for debugging
       this.elmId = elmId; 
@@ -176,42 +181,11 @@ class Player {
       this.collider;
       this.colliderWidth = this.width;
       this.colliderHeight = this.height * 0.25;
-      // this.inventory = [];
+      this.inventory = [];
       this.speed = 3; // # of px moved
+      //
+      gameAssets.instances.push(this);
   }
-  // moveSpriteDiv(div) {
-  //   const direction = randomInt(0, 3); // 0 = up, 1 = down, 2 = right, 3 = left
-  //   switch (direction) {
-  //     case 0: // up
-  //     div.posY = div.posY - div.speed;
-  //     this.updatePosition();
-  //       break;
-  //     case 1: // down
-  //     div.posY = div.posY - div.speed;
-  //     this.updatePosition();
-  //       break;
-  //     case 2: // right
-  //     div.posY = div.posY - div.speed;
-  //     this.updatePosition();
-  //       break;
-  //     case 3: // left
-  //     div.posY = div.posY - div.speed;
-  //     this.updatePosition();
-  //       break;
-  //   }
-  // }
-  // updateSprite() {
-  //   for(let i = 0; i < sprites.length; i++) {
-  //     if(sprites[i].playerId == 'sprite') {
-  //       console.log(sprites[i].elm);
-
-  //       let div = document.getElementById(sprites[i].elmId);
-  //       console.log(div);
-  //       this.moveSpriteDiv(div);
-  //     }
-
-  //   }
-  // }
   // PLAYER MOVEMENT & FACING FUNCTIONS
     // 
   isFacingRight() {
@@ -310,6 +284,33 @@ class Player {
       return true
     }
   }
+  // collectFlower(flwr) {
+  //   console.log('collectFlower function')
+  //   let flowerDist = Math.sqrt(
+  //     Math.pow((this.posX + this.width/2) - (flwr.posX + flwr.width/2), 2) +
+  //     Math.pow((this.posY + this.height/2) - (flwr.posY + flwr.height/2), 2)
+  //   );
+    
+  //   console.log(flowerDist);
+  //   if (flowerDist <= this.speed) {
+  //     this.inventory.push(flwr);
+  //     console.log('Flower collected!');
+  //   }
+  // }
+  collectFlower(flwr) {
+    let flowerDist = Math.sqrt(
+      Math.pow((this.posX + this.width/2) - (flwr.posX + flwr.width/2), 2) +
+      Math.pow((this.posY + this.height/2) - (flwr.posY + flwr.height/2), 2)
+    );
+
+    if (flowerDist < this.speed) {
+      this.inventory.push(flwr);
+      let index = gameMap.indexOf(flwr);
+      if (index > -1) {
+        gameMap.splice(index, 1);
+      }
+    }
+  }
   updatePosition() {
     // if me:
     if(this.isMe === true) {
@@ -319,9 +320,6 @@ class Player {
       this.elm.style.left = this.posX + 'px';
       this.elm.style.top = this.posY  + 'px';
     }
-  }
-  updateWorldObjects() {
-    // push activePlayers to worldObjects array?
   }
   createElement() {
     this.elm = document.createElement('div');
@@ -368,38 +366,54 @@ class Player {
   }
 };
 
+// Player.prototype.collectFlower = function(flower) {
+//   let flowerDist = Math.sqrt(
+//     Math.pow((this.posX + this.width/2) - (flower.posX + flower.width/2), 2) +
+//     Math.pow((this.posY + this.height/2) - (flower.posY + flower.height/2), 2)
+//   );
+
+//   if (flowerDist <= this.speed) {
+//     this.inventory.push(flower);
+//     let index = flowers.indexOf(flower);
+//     if (index !== -1) {
+//       flowers.splice(index, 1);
+//     }
+//   }
+// };
+
 class Sprite extends Player {
   constructor(elmId, playerId, posX, posY, width, height, isFacing, isSprite, isMe) {
     super(elmId, playerId, posX, posY, width, height, isFacing, isSprite, isMe)
-    // this.posX = 0; // for debugging
-    // this.posY = 0; // for debugging
-    // this.elmId = elmId; 
-    // this.playerId = playerId; 
-    // this.posX = posX; 
-    // this.posY = posY; 
-    // this.width = width;
-    // this.height = height;
-    // this.isFacing = isFacing; 
-    // this.isSprite = isSprite;
-    this.isMe = isMe;  
-    //
-    this.elm; 
-    this.collider;
-    this.colliderWidth = this.width;
-    this.colliderHeight = this.height * 0.25;
-    // this.inventory = [];
-    this.speed = 3; // # of px moved
+   
+    gameAssets.instances.push(this);
+  }
+}
+
+class Slug extends gameAssets {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+    this.elmId = elmId;
+    this.objectType = objectType;
+    this.posX = posX;
+    this.posX = posX; 
+    this.posY = posY; 
+    this.width = width;
+    this.height = height;
+
+    this.speed = 3;
 
     this.moveInterval = setInterval(() => {
-      if (this.playerId === 'sprite') {
+      // if (this.objectType === 'slug') {
         this.generateRandomMovement();
-      }
+      // }
     }, 1000);
+
+    gameAssets.instances.push(this);
   }
   generateRandomMovement() {
-    if (this.playerId !== "sprite") {
-      return;
-    }
+    // if (this.playerId !== "sprite") {
+    //   return;
+    // }
     const directions = ["left", "right", "up", "down"];
     const randomDirection = directions[Math.floor(Math.random() * directions.length)];
     switch (randomDirection) {
@@ -431,19 +445,76 @@ class Sprite extends Player {
         break;
     }
   }
+  createElement() {
+    // name tag for debug tracking elements
+    this.nameTag.innerHTML = this.elmId;
+
+    if(debug === true) {
+      this.elm.append(this.nameTag)
+      // this.posX = 0;
+      // this.posY = 0;
+    }
+
+    this.elm.setAttribute('class', 'slug');
+    this.collider.setAttribute('class', 'colliderS');
+
+    this.elm.id = this.elmId;
+
+    this.elm.style.width = this.width + 'px';
+    this.elm.style.height = this.height + 'px';
+
+    this.collider.style.width = this.colliderWidth + 'px';
+    this.collider.style.height = this.colliderHeight + 'px';
+
+    this.elm.style.left = this.posX + 'px';
+    this.elm.style.top = this.posY  + 'px';
+
+    this.elm.append(this.collider);
+    gameMap.append(this.elm);
+
+    // this.updatePosition();
+    // this.updateWorldObjects();
+  }
+  
 }
 
-  // [1A] Receives element locations from server
-  socket.on('inactiveSprites', function (spriteInfo) {
-    for(let i = 0; i < spriteInfo.length; i++) {
-        // create instance 
-        // elmId, playerId, posX, posY, isFacing, isSprite, isMe
-        sprite = new Sprite (spriteInfo[i].elmId, 'sprite', spriteInfo[i].posX, spriteInfo[i].posY, spriteInfo[i].width, spriteInfo[i].height, 'down', true, false);
-          sprite.createElement();
-          sprites.push(sprite);
-          // console.log(sprites, ' :at inactiveSprites')
+class Flower extends gameAssets {
+  constructor(elmId, objectType, posX, posY, width, height) {
+    super(elmId, objectType, posX, posY, width, height);
+
+    gameAssets.instances.push(this);
+  }
+  createElement() {
+    // name tag for debug tracking elements
+    this.nameTag.innerHTML = this.elmId;
+
+    if(debug === true) {
+      this.elm.append(this.nameTag)
+      // this.posX = 0;
+      // this.posY = 0;
     }
-});
+
+    this.elm.setAttribute('class', 'flower');
+    this.collider.setAttribute('class', 'colliderS');
+
+    this.elm.id = this.elmId;
+
+    this.elm.style.width = this.width + 'px';
+    this.elm.style.height = this.height + 'px';
+
+    this.collider.style.width = this.colliderWidth + 'px';
+    this.collider.style.height = this.colliderHeight + 'px';
+
+    this.elm.style.left = this.posX + 'px';
+    this.elm.style.top = this.posY  + 'px';
+
+    this.elm.append(this.collider);
+    gameMap.append(this.elm);
+
+    // this.updatePosition();
+    // this.updateWorldObjects();
+  }
+}
 
   // [1B] Receives current players from server
   socket.on('currentPlayers', function (players) {
@@ -473,8 +544,11 @@ class Sprite extends Player {
             assignedSprite.elm.remove(gameMap);
 
           player = new Player (players[id].elmId, players[id].playerId, assignedSprite.posX, assignedSprite.posY, assignedSprite.width, assignedSprite.height, assignedSprite.isFacing, false, true);
+          // Object.assign(player, { collectFlower: Player.prototype.collectFlower });
             player.createElement();
             activePlayers.push(player);
+          
+            
 
             console.log(sprites, ' :at mainplayer');
         }
@@ -503,6 +577,35 @@ class Sprite extends Player {
       }
     });
   });
+
+  // [1A] Receives element locations from server
+  socket.on('inactiveSprites', function (spriteInfo) {
+    for(let i = 0; i < spriteInfo.length; i++) {
+        // create instance 
+        // elmId, playerId, posX, posY, isFacing, isSprite, isMe
+        sprite = new Sprite (spriteInfo[i].elmId, 'sprite', spriteInfo[i].posX, spriteInfo[i].posY, spriteInfo[i].width, spriteInfo[i].height, 'down', true, false);
+          sprite.createElement();
+          sprites.push(sprite);
+          // console.log(sprites, ' :at inactiveSprites')
+    }
+});
+
+// [1A] Receives element locations from server
+socket.on('placeFlowers', function (flwrInfo) {
+  for(let i = 0; i < flwrInfo.length; i++) {
+      flwr = new Flower (flwrInfo[i].elmId, 'flower', flwrInfo[i].posX, flwrInfo[i].posY, flwrInfo[i].width, flwrInfo[i].height);
+        flwr.createElement();
+        flowers.push(flwr);
+  }
+});
+
+// socket.on('placeSlugs', function (slugInfo) {
+//   for(let i = 0; i < slugInfo.length; i++) {
+//       let newslug = new Slug (slugInfo[i].elmId, 'slug', slugInfo[i].posX, slugInfo[i].posY, slugInfo[i].width, slugInfo[i].height);
+//       newslug.createElement();
+//         slugs.push(newslug);
+//   }
+// });
 
     socket.on('newPlayer', function (playerInfo) {
     console.log("A newPlayer has joined");

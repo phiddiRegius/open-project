@@ -1,10 +1,3 @@
-:root {
-    --colorrOne: 142, 202, 230;
-    --colorTwo: 251, 133, 0;
-    --colorThree: 231, 198, 255;
-    --colorFour: 132, 165, 157;
-    --colorFive: 242, 132, 130;
-}
 body {
     margin: 0;
     padding: 0;
@@ -18,6 +11,9 @@ p {
     padding: 0;
     font-size: 12px;
 }
+.debugTag {
+    display: block;
+  }
 #mainContent {
     width: 100vw;
     height: 100vh;
@@ -52,6 +48,31 @@ p {
     margin-top: 50vh;
     /* transform: translate(-50%, -50%); */
 }
+.worldObject {
+    position: absolute;
+}
+.interactiveObject {
+    background-color: rgb(202, 202, 202);
+}
+.staticSpriteObject {
+    background-color: rgb(118, 169, 227);
+}
+.item {
+    position: absolute;
+    background-color: rgb(225, 227, 118);
+}
+.mainPlayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgb(120, 227, 118);
+}
+.guestPlayer {
+    position: absolute;
+    background-color: rgb(183, 118, 227);
+}
+
+
 .colliderS {
     background-color: rgba(43, 113, 144, 0.6);
     position: absolute;
@@ -70,17 +91,16 @@ p {
     left: 0;
     bottom: 0;
 }
+.flower {
+    position: absolute;
+    background-color: rgb(224, 137, 218);
+}
+.slug {
+    position: absolute;
+    background-color: rgb(255, 187, 0);
+}
 .sprite {
     position: absolute;
     background-color: aqua;
 }
-.mainPlayer {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    background-color: rgb(159, 218, 71);
-}
-.otherPlayer {
-    position: absolute;
-    background-color: rgba(154, 108, 196);
-}
+
