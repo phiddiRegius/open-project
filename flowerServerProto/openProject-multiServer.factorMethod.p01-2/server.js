@@ -29,14 +29,12 @@ let mapHeight = 400;
 let minDist = 20;
 
 function shuffleArray(array) {
-  for (var i = array.length - 1; i > 0; i--) { 
-      var j = Math.floor(Math.random() * (i + 1));
-
-      let temp = array[i];
-      array[i] = array[j];
-      array[j] = temp;
+  for (let i = array.length - 1; i > 0; i--) { 
+      let j = Math.floor(Math.random() * (i + 1));
+        let temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
   }
-     
   return array;
 }
 
@@ -172,7 +170,7 @@ io.on('connection', function (socket) {
       elmId: staticSprite.elmId,
       posX: staticSprite.posX,
       posY: staticSprite.posY,
-      direction: 'down',
+      currentDirection: 'down',
     };
 
     staticSprite.isStatic = false;
@@ -191,15 +189,14 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('playerToFace', players[playerId]);
   });
   socket.on('playerMovement', function (movementData) {
-    //console.log(movementData);
+    // console.log('playerMovement: ', movementData);
     if (players[movementData.playerId]) {
 
       players[movementData.playerId].posX = movementData.x;
       players[movementData.playerId].posY = movementData.y;
-      // players[movementData.playerId].direction = movementData.direction;
+      players[movementData.playerId].currentDirection = movementData.currentDirection;
 
-      //console.log(players[movementData.playerId].posX , players[movementData.playerId].posY)
-
+      // console.log(players[movementData.playerId]);
       socket.broadcast.emit('playerMoved', players[movementData.playerId]);
     } else {
       console.log(movementData.playerId);

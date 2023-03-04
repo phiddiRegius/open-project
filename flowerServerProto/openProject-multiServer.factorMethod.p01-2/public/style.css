@@ -86,23 +86,9 @@ p {
     left: 0;
     bottom: 0;
 }
-.colliderS {
-    background-color: rgba(43, 113, 144, 0.6);
+.flowerTrain {
     position: absolute;
-    left: 0;
-    bottom: 0;
-}
-.collider1 {
-    background-color: rgba(155, 180, 43, 0.6);
-    position: absolute;
-    left: 0;
-    bottom: 0;
-}
-.collider2 {
-    background-color: rgba(109, 47, 136, 0.6);
-    position: absolute;
-    left: 0;
-    bottom: 0;
+    background-color: rgb(171, 39, 70);
 }
 .flower {
     position: absolute;
@@ -118,7 +104,7 @@ p {
 }
 
 /* arrows for tracking face direction */
-.arrow {
+/* .arrow {
     width: 0;
     height: 0;
     border-style: solid;
@@ -148,5 +134,5 @@ p {
     border-color: transparent transparent transparent #ffffff;
     margin-left: 0;
     margin-top: -10px;
-  }
+  } */
 

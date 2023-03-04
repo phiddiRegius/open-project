@@ -137,6 +137,10 @@ startButton.addEventListener('click', () => {
 // gameSprites => characters in environment
   // **objectType param defines a thing OR player
 
+class assetManager { // not implementing this yet... will be a mediator for behaviors and interactions
+  constructor() {
+  }
+}
 class gameAsset {
   static instances = [];
   constructor(objectType, elmId, posX, posY, width, height) {
@@ -147,6 +151,7 @@ class gameAsset {
     this.posY = posY;
     this.width = width;
     this.height = height;
+    this.elm;
     //
     this.playerId;
     this.zIndex;
@@ -179,27 +184,6 @@ class gameAsset {
       this.elm.style.top = `${this.posY}px`;
     }
   }
-  // isColliding(nextStepX, nextStepY) {
-  //   // Check if the player is WITHIN the bounds of the game map
-  //   if (nextStepX >= 0 && nextStepX < mapWidth - this.width && nextStepY >= 0 && nextStepY < mapHeight - this.height) {
-  //     // Check for collisions with all asset instances
-  //     for (let i = 0; i < gameAsset.instances.length; i++) {
-  //       const asset = gameAsset.instances[i];
-  //       if (asset !== this && asset.collidable) {
-  //         if ((nextStepX + this.width > asset.posX && nextStepX < asset.posX + asset.width) && 
-  //             (nextStepY + this.height > asset.posY && nextStepY < asset.posY + asset.height)) {
-
-  //                 return true; // Collision detected
-  //             }
-  //           }
-  //         }
-  //     // !isColliding
-  //     return false;
-  //   } else {
-  //     // p => outside map bounds
-  //     return true;
-  //   }
-  // }
   isColliding(nextStepX, nextStepY) {
     // Check if the player is WITHIN the bounds of the game map
     if (nextStepX >= 0 && nextStepX < mapWidth - this.width && nextStepY >= 0 && nextStepY < mapHeight - this.height) {
@@ -252,7 +236,7 @@ class gameAsset {
       throw new Error("Invalid class");
     }
 
-    const elm = elementCreator();
+    let elm = elementCreator();
     elm.style.left = `${this.posX}px`;
     elm.style.top = `${this.posY}px`;
     elm.style.width = `${this.width}px`;
@@ -307,22 +291,20 @@ class gameAsset {
     // this.elmId = this.playerId;
     playerElm.id = this.playerId;
     playerElm.classList.add(type + "Player");
-    this.playerId = playerElm.id; // Assign the playerId to this
+    this.playerId = playerElm.id; 
+    console.log
     return playerElm;
   }
 }
 class worldObject extends gameAsset {
   constructor(objectType, elmId, posX, posY, width, height) {
     super(objectType, elmId, posX, posY, width, height);
-    //
     
   }
 }
 class interactiveObject extends worldObject {
   constructor(objectType, elmId, posX, posY, width, height) {
     super(objectType, elmId, posX, posY, width, height);
-    //
-  
   }
 }
 class staticSpriteObject extends interactiveObject {
@@ -346,11 +328,13 @@ class worldItem extends worldObject {
 class gameSprite extends gameAsset {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
     super(objectType, elmId, posX, posY, width, height, currentDirection);
+    this.currentDirection;
     // this.velocity;
     this.inventory = [];
   }
   updateServerPosition() {
-    socket.emit('playerMovement', { playerId: this.playerId, x: this.posX, y: this.posY, direction: this.currentDirection });
+    // console.log('updateServerPosition: ', this.playerId, this.posx, this.posY, this.currentDirection);
+    socket.emit('playerMovement', { playerId: this.playerId, x: this.posX, y: this.posY, currentDirection: this.currentDirection });
   }
   setFacingDirection(direction) {
     this.faceLeft = direction === 'left';
@@ -359,7 +343,8 @@ class gameSprite extends gameAsset {
     this.faceDown = direction === 'down';
     
     this.currentDirection = direction;
-    // this.updateServerPosition();
+    this.updateServerPosition();
+    // console.log('setFacingDirection: ', this.currentDirection);
   }
   step() {
     let nextStepX = this.posX;
@@ -378,20 +363,89 @@ class gameSprite extends gameAsset {
       this.posY = nextStepY;
       this.updatePosition();
       this.updateServerPosition();
+      // this.moveTrain();
     } else {
         // stuff for moving if the dist is less than this.velocity but greater than 0
     }
   }
 }
+class pathFinderSprite extends gameSprite { // using this for the flowerTrain
+  constructor(elmId, posX, posY, width, height) {
+    super(elmId, posX, posY, width, height);
+    this.maxPassengers = 5; // idk why I think this is funny
+    this.flwrTrain = [];
+      this.flwrDisplayWidth = 10;
+      this.flwrDisplayHeight = 10;
+      this.initialPos = 10;
+      this.collidable = false;
+    
+      for(let i=0; i < this.maxPassengers; i++) {
+        let flwDiv = document.createElement('div');
+        flwDiv.classList.add('flowerTrain');
+        flwDiv.style.width = `${this.flwrDisplayWidth}px`;
+        flwDiv.style.height = `${this.flwrDisplayHeight}px`;
+        // flwDiv.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
+        // flwDiv.style.top = `${this.posY + this.height - 15 - this.initialPos}px`;
+        gameMap.append(flwDiv);
+        this.flwrTrain.push(flwDiv);
+      }
+  }
+  boardFlowerTrain() {
+    // for(let i=0; i < this.maxPassengers; i++) {
+    //   if (this.flwrTrain[i].childElementCount === 0) {
+    //     console.log("All aboard: ");
+    //     break;
+    //   }
+    // }
+  }
+  moveTrain() {
+    // Calculate the previous position of the player
+    let prevX = this.posX - this.velocity;
+    let prevY = this.posY - this.velocity;
+  
+    // Calculate the distance between the previous and current positions
+    let distX = this.posX - prevX;
+    let distY = this.posY - prevY;
+  
+    // Calculate the direction of movement
+    let dirX = distX > 0 ? 1 : distX < 0 ? -1 : 0;
+    let dirY = distY > 0 ? 1 : distY < 0 ? -1 : 0;
+  
+    // Calculate the number of train elements to position
+    let numTrainElements = Math.min(this.flwrTrain.length, this.maxPassengers);
+  
+    // Position the train elements along the path of movement
+    for (let i = 0; i < numTrainElements; i++) {
+      let trainX = this.posX - (dirX * (i + 1) * (this.width + this.flwrDisplayWidth));
+      let trainY = this.posY - (dirY * (i + 1) * (this.height + this.flwrDisplayHeight));
+  
+      this.flwrTrain[i].style.left = trainX + "px";
+      this.flwrTrain[i].style.top = trainY + "px";
+    }
+  }
+  // step() {
+  //   // this.moveTrain();
+  // }
+}
 class mainPlayer extends gameSprite {
-  static instances
-  constructor(objectType, elmId, posX, posY, width, height) {
-    super(objectType, elmId, posX, posY, width, height);
+  constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
+    super(objectType, elmId, posX, posY, width, height, currentDirection);
+    this.flwrTrain = new pathFinderSprite(elmId, posX, posY, width, height);
     this.velocity = 5;
     this.staticSprite;
   }
+  step() {
+    super.step(); 
+    this.flowerTrain.moveTrain(); 
+  }
   getElm() {
     return document.getElementById(this.playerId);
+  }
+  addFlower(flower) {
+    if (this.inventory.length < this.maxInventory) {
+      this.inventory.push(flower);
+      // this.displayFlowerTrain();
+    }
   }
   updatePosition() {
     this.setZIndex();
@@ -400,13 +454,12 @@ class mainPlayer extends gameSprite {
   }
 }
 class guestPlayer extends mainPlayer {
-  constructor(objectType, elmId, posX, posY, width, height) {
-    super(objectType, elmId, posX, posY, width, height);
+  constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
+    super(objectType, elmId, posX, posY, width, height, currentDirection);
+    this.flwrTrain = new pathFinderSprite(playerId, posX, posY, width, height);
   }
 }
-
 // console.log(gameAsset.instances);
-
 socket.on('gameObjects', function (objectInfo) {
   objectInfo.forEach((info) => {
         let { objectType, elmId, posX, posY, width, height } = info; // deconstruct objectInfo
@@ -438,11 +491,13 @@ socket.on('gameObjects', function (objectInfo) {
         console.log(`Adding mainPlayer-${playerId} to activePlayers`);
           let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == players[playerId].elmId);
             // console.log(assignedSprite); // check if param values are correct for the assigned'static'Sprite 
-          mainPlayerInstance = new mainPlayer('player', assignedSprite.elmId,  players[playerId].posX,  players[playerId].posY, assignedSprite.width, assignedSprite.height);
+          mainPlayerInstance = new mainPlayer('player', assignedSprite.elmId,  players[playerId].posX,  players[playerId].posY, assignedSprite.width, assignedSprite.height, players[playerId].currentDirection);
             mainPlayerInstance.playerId = playerId
             mainPlayerInstance.createElement();
             mainPlayerInstance.updatePosition();  
-              
+
+          // mainPlayerTrain = new pathFinderSprite();
+            // mainPlayerInstance.displayFlowerTrain();
 
             activePlayers.push(mainPlayerInstance);
             console.log(assignedSprite);
@@ -460,7 +515,7 @@ socket.on('gameObjects', function (objectInfo) {
         console.log(`Adding guestPlayer-${playerId} to activePlayers`);
         let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == players[playerId].elmId);
             // console.log(assignedSprite); // check if parameter values are correct for the assigned'static'Sprite 
-          guestPlayerInstance = new guestPlayer('player', assignedSprite.elmId,  players[playerId].posX,  players[playerId].posY, assignedSprite.width, assignedSprite.height);
+          guestPlayerInstance = new guestPlayer('player', assignedSprite.elmId,  players[playerId].posX,  players[playerId].posY, assignedSprite.width, assignedSprite.height, players[playerId].currentDirection);
             guestPlayerInstance.playerId = playerId;
               guestPlayerInstance.createElement();
 
@@ -482,7 +537,7 @@ socket.on('gameObjects', function (objectInfo) {
     console.log(`Adding guestPlayer-${playerInfo.playerId} to activePlayers`);
     let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == playerInfo.elmId);
   
-    guestPlayerInstance = new guestPlayer('player', assignedSprite.elmId, playerInfo.posX, playerInfo.posY, assignedSprite.width, assignedSprite.height);
+    guestPlayerInstance = new guestPlayer('player', assignedSprite.elmId, playerInfo.posX, playerInfo.posY, assignedSprite.width, assignedSprite.height, playerInfo.currentDirection);
     guestPlayerInstance.playerId = playerInfo.playerId;
     guestPlayerInstance.createElement();
   
@@ -505,7 +560,7 @@ socket.on('gameObjects', function (objectInfo) {
   
   // });
   socket.on('playerMoved', function (playerInfo) {
-      // console.log(playerInfo.posX, playerInfo.posY);
+      console.log(playerInfo.posX, playerInfo.posY, playerInfo.currentDirection);
     let movedPlayer = activePlayers.find(player => player.playerId === playerInfo.playerId);
     //  console.log(movedPlayer);
       // if (!movedPlayer) { // return from fn() => false
@@ -515,13 +570,13 @@ socket.on('gameObjects', function (objectInfo) {
       // returning undefined
       movedPlayer.posX = playerInfo.posX;
       movedPlayer.posY = playerInfo.posY;
+      movedPlayer.currentDirection = playerInfo.currentDirection;
       // movedPlayer.currentDirection = playerInfo.direction;
       // console.log("after updating movement: ", movedPlayer.posX, movedPlayer.posY);
       movedPlayer.updatePosition();
+      console.log(movedPlayer);
   });
-
   // socket.on('playerToFace', function (playerInfo) {
-
   socket.on('disconnectUser', function (playerId) {
     let playerIndex = activePlayers.findIndex(player => player.playerId === playerId);
     if (playerIndex === -1) {
