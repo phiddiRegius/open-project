@@ -1,0 +1,142 @@
+:root {
+    --display: block;
+    --zIndex: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    /* overflow: hidden; */
+    width: 100%;
+    height: 100%;
+    /* overflow-y: scroll; */
+}
+body.gameIsStarted {
+    overflow: hidden;
+  }
+p {
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+}
+.debugTag {
+    display: var(--display);
+  }
+#mainContent {
+    width: 100vw;
+    height: 100vh;
+}
+#startMenu {
+    position: fixed;
+    width: 100vw;
+    height: 100px;
+    bottom: 0;
+    left: 0;
+    z-index: 9999;
+    background-color: rgba(152, 196, 234, 0.349);
+}
+#startButton {
+    position: relative;
+    width: 50px;
+    height: 40px;
+    margin: 20px;
+}
+#gameMap {
+    position: relative;
+    /* width: 4000px;
+    height: 4000px; */
+    background-color: aliceblue;
+    background-image: url(assets/world/grassMapMed.png);
+    background-repeat: no-repeat;
+    /* overflow: hidden; */
+    top: 0px;
+    left: 0px;
+
+    margin-left: 50%;
+    margin-top: 50vh;
+     transform: translate(-50%, -50%); /* comment out when debugging */
+}
+.worldObject {
+    position: absolute;
+}
+.interactiveObject {
+    background-color: rgb(202, 202, 202);
+}
+.staticSpriteObject {
+    background-color: rgb(118, 169, 227);
+}
+.item {
+    position: absolute;
+    background-color: rgb(225, 227, 118);
+}
+.mainPlayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgb(120, 227, 118);
+}
+.guestPlayer {
+    position: absolute;
+    background-color: rgb(183, 118, 227);
+}
+
+.colliderFoot {
+    background-color: rgba(227, 227, 227, 0.66);
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+.flowerTrain {
+    position: absolute;
+    background-color: rgba(255, 0, 0, 0.993);
+}
+.flowerFollower{
+    position: absolute;
+    background-color: rgba(151, 0, 0, 0.993);
+}
+.flower {
+    position: absolute;
+    background-color: rgb(224, 137, 218);
+}
+.slug {
+    position: absolute;
+    background-color: rgb(255, 187, 0);
+}
+.sprite {
+    position: absolute;
+    background-color: aqua;
+}
+
+
+/* .arrow {
+    width: 0;
+    height: 0;
+    border-style: solid;
+  }
+  
+  .arrow-up {
+    border-width: 0 10px 20px 10px;
+    border-color: transparent transparent #ffffff transparent;
+    margin-top: -20px;
+  }
+  
+  .arrow-down {
+    border-width: 20px 10px 0 10px;
+    border-color: #ffffff transparent transparent transparent;
+    margin-top: 0;
+  }
+  
+  .arrow-left {
+    border-width: 10px 20px 10px 0;
+    border-color: transparent #ffffff transparent transparent;
+    margin-left: -20px;
+    margin-top: -10px;
+  }
+  
+  .arrow-right {
+    border-width: 10px 0 10px 20px;
+    border-color: transparent transparent transparent #ffffff;
+    margin-left: 0;
+    margin-top: -10px;
+  } */
+
