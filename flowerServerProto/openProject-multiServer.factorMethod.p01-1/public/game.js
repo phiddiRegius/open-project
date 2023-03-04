@@ -137,6 +137,10 @@ startButton.addEventListener('click', () => {
 // gameSprites => characters in environment
   // **objectType param defines a thing OR player
 
+class assetManager { // not implementing this yet... will be a mediator for behaviors and interactions
+  constructor() {
+  }
+}
 class gameAsset {
   static instances = [];
   constructor(objectType, elmId, posX, posY, width, height) {
@@ -365,6 +369,9 @@ class gameSprite extends gameAsset {
     }
   }
 }
+class pathFinderSprite extends gameSprite {
+  
+}
 class mainPlayer extends gameSprite {
   static instances
   constructor(objectType, elmId, posX, posY, width, height) {
@@ -387,78 +394,78 @@ class mainPlayer extends gameSprite {
       // this.displayFlowerTrain();
     }
   }
-  moveTrain() {
-    this.flowerTrain.style.width = `${this.flwrDisplayWidth}px`;
-    this.flowerTrain.style.height = `${this.flwrDisplayHeight}px`;
-    console.log(this.flwrDisplayWidth, this.flwrDisplayHeight);
-    if (this.currentDirection === 'up') {
-      console.log("Player is walking up")
-      this.flowerTrain.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
-      this.flowerTrain.style.top = `${this.posY + this.height + this.initialPos}px`;
-    } 
-  }
+  // moveTrain() {
+  //   this.flowerTrain.style.width = `${this.flwrDisplayWidth}px`;
+  //   this.flowerTrain.style.height = `${this.flwrDisplayHeight}px`;
+  //   console.log(this.flwrDisplayWidth, this.flwrDisplayHeight);
+  //   if (this.currentDirection === 'up') {
+  //     console.log("Player is walking up")
+  //     this.flowerTrain.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
+  //     this.flowerTrain.style.top = `${this.posY + this.height + this.initialPos}px`;
+  //   } 
+  // }
+  // // displayFlowerTrain() {
+  // //   this.flowerTrain = document.createElement('div');
+  // //   this.flowerTrain.classList.add("flowerTrain");
+
+  // //   this.flowerTrain.style.width = `${this.flwrDisplayWidth}px`;
+  // //   this.flowerTrain.style.height = `${this.flwrDisplayHeight}px`;
+
+  // //   this.flowerTrain.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
+  // //   this.flowerTrain.style.top = `${this.posY + this.height - 15 - this.initialPos}px`;
+
+  // //   gameMap.append(this.flowerTrain);
+
+
+  // //   for(let i=0; i < this.maxInventory; i++) {
+  // //     let flwrFollower = document.createElement('div');
+  // //       flwrFollower.classList.add('flowerFollower');
+
+  // //       flwrFollower.style.width = `${this.flwrDisplayWidth}px`;
+  // //       flwrFollower.style.height = `${this.flwrDisplayHeight}px`;
+
+  // //       let followerOffset = 15;
+  // //       flwrFollower.forEach((follower, index) => {
+  // //         follower.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
+  // //         follower.style.top = `${this.posY + this.height - followerOffset}px`;
+  // //         followerOffset += 15;
+  // //       });
+
+  // //   gameMap.append(flwrFollower);
+  // // }
   // displayFlowerTrain() {
   //   this.flowerTrain = document.createElement('div');
   //   this.flowerTrain.classList.add("flowerTrain");
-
+  
   //   this.flowerTrain.style.width = `${this.flwrDisplayWidth}px`;
   //   this.flowerTrain.style.height = `${this.flwrDisplayHeight}px`;
-
+  
+  //   // Set initial position of the leader flower
   //   this.flowerTrain.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
   //   this.flowerTrain.style.top = `${this.posY + this.height - 15 - this.initialPos}px`;
-
+  
   //   gameMap.append(this.flowerTrain);
-
-
-  //   for(let i=0; i < this.maxInventory; i++) {
+  
+  //   let followerOffset = 15;
+  
+  //   // Create and position the follower flowers
+  //   for (let i = 0; i < this.maxInventory; i++) {
   //     let flwrFollower = document.createElement('div');
-  //       flwrFollower.classList.add('flowerFollower');
-
-  //       flwrFollower.style.width = `${this.flwrDisplayWidth}px`;
-  //       flwrFollower.style.height = `${this.flwrDisplayHeight}px`;
-
-  //       let followerOffset = 15;
-  //       flwrFollower.forEach((follower, index) => {
-  //         follower.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
-  //         follower.style.top = `${this.posY + this.height - followerOffset}px`;
-  //         followerOffset += 15;
-  //       });
-
-  //   gameMap.append(flwrFollower);
+  //     flwrFollower.classList.add('flowerFollower');
+  
+  //     flwrFollower.style.width = `${this.flwrDisplayWidth}px`;
+  //     flwrFollower.style.height = `${this.flwrDisplayHeight}px`;
+  
+  //     // Set the position of each follower flower based on the position of the leader flower
+  //     flwrFollower.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
+  //     flwrFollower.style.top = `${this.posY + this.height - followerOffset}px`;
+  
+  //     // Increase the offset for the next follower
+  //     followerOffset += 15;
+  
+  //     gameMap.append(flwrFollower);
+  //   }
   // }
-  displayFlowerTrain() {
-    this.flowerTrain = document.createElement('div');
-    this.flowerTrain.classList.add("flowerTrain");
-  
-    this.flowerTrain.style.width = `${this.flwrDisplayWidth}px`;
-    this.flowerTrain.style.height = `${this.flwrDisplayHeight}px`;
-  
-    // Set initial position of the leader flower
-    this.flowerTrain.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
-    this.flowerTrain.style.top = `${this.posY + this.height - 15 - this.initialPos}px`;
-  
-    gameMap.append(this.flowerTrain);
-  
-    let followerOffset = 15;
-  
-    // Create and position the follower flowers
-    for (let i = 0; i < this.maxInventory; i++) {
-      let flwrFollower = document.createElement('div');
-      flwrFollower.classList.add('flowerFollower');
-  
-      flwrFollower.style.width = `${this.flwrDisplayWidth}px`;
-      flwrFollower.style.height = `${this.flwrDisplayHeight}px`;
-  
-      // Set the position of each follower flower based on the position of the leader flower
-      flwrFollower.style.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
-      flwrFollower.style.top = `${this.posY + this.height - followerOffset}px`;
-  
-      // Increase the offset for the next follower
-      followerOffset += 15;
-  
-      gameMap.append(flwrFollower);
-    }
-  }
   updatePosition() {
     this.setZIndex();
     this.elm.style.left = `${this.posX}px`;
@@ -508,9 +515,7 @@ socket.on('gameObjects', function (objectInfo) {
             mainPlayerInstance.playerId = playerId
             mainPlayerInstance.createElement();
             mainPlayerInstance.updatePosition();  
-            mainPlayerInstance.displayFlowerTrain();
             // mainPlayerInstance.displayFlowerTrain();
-              
 
             activePlayers.push(mainPlayerInstance);
             console.log(assignedSprite);
