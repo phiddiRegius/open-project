@@ -378,74 +378,31 @@ class pathFinderSprite extends gameSprite { // using this for the flowerTrain
       this.flwrDisplayHeight = 10;
       this.initialPos = 10;
       this.collidable = false;
-    
-      for(let i=0; i < this.maxPassengers; i++) {
-        let flwDiv = document.createElement('div');
-        flwDiv.classList.add('flowerTrain');
-        flwDiv.style.width = `${this.flwrDisplayWidth}px`;
-        flwDiv.style.height = `${this.flwrDisplayHeight}px`;
-        // flwDiv.left = `${this.posX - this.flwrDisplayWidth/2 + this.width/2}px`;
-        // flwDiv.style.top = `${this.posY + this.height - 15 - this.initialPos}px`;
-        gameMap.append(flwDiv);
-        this.flwrTrain.push(flwDiv);
-      }
+      console.log(elmId, posX, posY, width, height);
+      this.flwrDiv = document.createElement('div');
+      this.flwrDiv.style.width = this.flwrDisplayWidth + 'px';
+      this.flwrDiv.style.height = this.flwrDisplayHeight + 'px';
+      this.flwrDiv.classList.add('flowerTrain');
+      this.flwrDiv.style.left = this.posX + this.width/2 - this.flwrDisplayWidth/2 + 'px';
+      this.flwrDiv.style.top = this.posY - this.initialPos + 'px';
+      // this.flwrDiv.style.zIndex = '-1'; 
+      // this.flwrDiv.style.display = 'none'; 
+      gameMap.append(this.flwrDiv);
   }
-  boardFlowerTrain() {
-    // for(let i=0; i < this.maxPassengers; i++) {
-    //   if (this.flwrTrain[i].childElementCount === 0) {
-    //     console.log("All aboard: ");
-    //     break;
-    //   }
-    // }
-  }
-  moveTrain() {
-    // Calculate the previous position of the player
-    let prevX = this.posX - this.velocity;
-    let prevY = this.posY - this.velocity;
-  
-    // Calculate the distance between the previous and current positions
-    let distX = this.posX - prevX;
-    let distY = this.posY - prevY;
-  
-    // Calculate the direction of movement
-    let dirX = distX > 0 ? 1 : distX < 0 ? -1 : 0;
-    let dirY = distY > 0 ? 1 : distY < 0 ? -1 : 0;
-  
-    // Calculate the number of train elements to position
-    let numTrainElements = Math.min(this.flwrTrain.length, this.maxPassengers);
-  
-    // Position the train elements along the path of movement
-    for (let i = 0; i < numTrainElements; i++) {
-      let trainX = this.posX - (dirX * (i + 1) * (this.width + this.flwrDisplayWidth));
-      let trainY = this.posY - (dirY * (i + 1) * (this.height + this.flwrDisplayHeight));
-  
-      this.flwrTrain[i].style.left = trainX + "px";
-      this.flwrTrain[i].style.top = trainY + "px";
-    }
-  }
-  // step() {
-  //   // this.moveTrain();
-  // }
 }
 class mainPlayer extends gameSprite {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
     super(objectType, elmId, posX, posY, width, height, currentDirection);
     this.flwrTrain = new pathFinderSprite(elmId, posX, posY, width, height);
     this.velocity = 5;
-    this.staticSprite;
+    // this.staticSprite;
   }
-  step() {
-    super.step(); 
-    this.flowerTrain.moveTrain(); 
-  }
+  // step() { // going insane 
+  //   // super.step(); 
+  //   // this.flowerTrain.moveTrain(); 
+  // }
   getElm() {
     return document.getElementById(this.playerId);
-  }
-  addFlower(flower) {
-    if (this.inventory.length < this.maxInventory) {
-      this.inventory.push(flower);
-      // this.displayFlowerTrain();
-    }
   }
   updatePosition() {
     this.setZIndex();
@@ -456,7 +413,7 @@ class mainPlayer extends gameSprite {
 class guestPlayer extends mainPlayer {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
     super(objectType, elmId, posX, posY, width, height, currentDirection);
-    this.flwrTrain = new pathFinderSprite(playerId, posX, posY, width, height);
+    this.flwrTrain = new pathFinderSprite(elmId, posX, posY, width, height);
   }
 }
 // console.log(gameAsset.instances);
