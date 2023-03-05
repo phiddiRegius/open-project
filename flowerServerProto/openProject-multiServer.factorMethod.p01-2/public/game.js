@@ -151,6 +151,7 @@ class gameAsset {
     this.posY = posY;
     this.width = width;
     this.height = height;
+    this.colliderFoot;
     this.elm;
     //
     this.playerId;
@@ -210,6 +211,18 @@ class gameAsset {
           if (playerFootX + this.colliderFoot.offsetWidth > assetFootX && playerFootX < assetFootX + asset.colliderFoot.offsetWidth &&
               playerFootY + this.colliderFoot.offsetHeight > assetFootY && playerFootY < assetFootY + asset.colliderFoot.offsetHeight) {
             return true; // colliding
+          }
+        }
+        // could actually use this to know at all time what the player is colliding with?
+        if (asset !== this && asset.isCollectable) {
+          // let assetFootX = asset.posX + asset.colliderFoot.offsetLeft;
+          // let assetFootY = asset.posY + asset.colliderFoot.offsetTop;
+          let playerFootX = nextStepX + this.colliderFoot.offsetLeft;
+          let playerFootY = nextStepY + this.colliderFoot.offsetTop;
+          if (playerFootX + this.colliderFoot.offsetWidth > asset.posX && playerFootX < asset.posX + asset.width &&
+              playerFootY + this.colliderFoot.offsetHeight > asset.posY && playerFootY < asset.posY + asset.height) {
+              this.collectWorldItem(asset);
+              return false;
           }
         }
       }
@@ -278,6 +291,7 @@ class gameAsset {
   }
   createItem() {
     let itemElm = document.createElement("div");
+    itemElm.id = this.elmId;
     itemElm.classList.add("item");
     return itemElm;
   }
@@ -315,13 +329,63 @@ class staticSpriteObject extends interactiveObject {
 class worldItem extends worldObject {
   constructor(objectType, elmId, posX, posY, width, height) {
     super(objectType, elmId, posX, posY, width, height);
+    this.collidable = false;
     this.isCollectable = true;
+    console.log(this);
   }
-  collectWorldItem() {
-    if (this.isCollectable && this.isColliding(posX, posY)) {
-      // Remove the item from the game world
-  
-      // console.log(`Picked up ${this.objectType}!`);
+  // static collectWorldItem() {
+  //   if (this.isCollectable && this.isColliding(posX, posY)) {
+  //     console.log(`Picked up ${this.objectType}!`);
+  //   }
+  // }
+}
+class pathFinderSprite { // using this for the flowerTrain
+  constructor(player) {
+    this.player = player;
+    this.currentDirection = player.currentDirection;
+    this.colliderFoot = player.colliderFoot;
+    this.maxPassengers = 5;
+    this.flwrTrain = [];
+    this.flwrDisplayWidth = 10;
+    this.flwrDisplayHeight = 10;
+    this.initialPos = 10;
+    this.collidable = false;
+  }
+  moveTrain() {
+    let buffer = 15; // space
+    let x = this.player.posX + this.player.width / 2 - this.flwrDisplayWidth / 2;
+    let y = this.player.posY + this.player.height - this.initialPos * 3;
+    let currentX = x;
+    let currentY = y;
+    for (let i = 0; i < this.maxPassengers; i++) {
+      switch (this.currentDirection) {
+        case 'down':
+          currentY = y - (i+1)*buffer;
+          break;
+        case 'right':
+          currentX = x - (i+1)*buffer;
+          break;
+        case 'up':
+          // currentY = y - (i+1)*distance;
+          currentY = y + (i+1)*buffer;
+          break;
+        case 'left':
+          currentX = x + (i+1)*buffer;
+          break;
+      }
+      let trainElm = this.flwrTrain[i];
+      if (!trainElm) {
+        // create a new train element if it doesn't exist yet
+        let newTrainElm = document.createElement('div');
+        newTrainElm.style.width = this.flwrDisplayWidth + 'px';
+        newTrainElm.style.height = this.flwrDisplayHeight + 'px';
+        newTrainElm.classList.add('flowerTrain');
+        this.flwrTrain.push(newTrainElm);
+        gameMap.append(newTrainElm);
+        trainElm = newTrainElm;
+      }
+      trainElm.style.top = currentY + 'px';
+      trainElm.style.left = currentX + 'px';
     }
   }
 }
@@ -334,7 +398,9 @@ class gameSprite extends gameAsset {
   }
   updateServerPosition() {
     // console.log('updateServerPosition: ', this.playerId, this.posx, this.posY, this.currentDirection);
+    // this.updateFlowerTrainPosition() 
     socket.emit('playerMovement', { playerId: this.playerId, x: this.posX, y: this.posY, currentDirection: this.currentDirection });
+    // pathFinderSprite.moveTrain();
   }
   setFacingDirection(direction) {
     this.faceLeft = direction === 'left';
@@ -369,51 +435,72 @@ class gameSprite extends gameAsset {
     }
   }
 }
-class pathFinderSprite extends gameSprite { // using this for the flowerTrain
-  constructor(elmId, posX, posY, width, height) {
-    super(elmId, posX, posY, width, height);
-    this.maxPassengers = 5; // idk why I think this is funny
-    this.flwrTrain = [];
-      this.flwrDisplayWidth = 10;
-      this.flwrDisplayHeight = 10;
-      this.initialPos = 10;
-      this.collidable = false;
-      console.log(elmId, posX, posY, width, height);
-      this.flwrDiv = document.createElement('div');
-      this.flwrDiv.style.width = this.flwrDisplayWidth + 'px';
-      this.flwrDiv.style.height = this.flwrDisplayHeight + 'px';
-      this.flwrDiv.classList.add('flowerTrain');
-      this.flwrDiv.style.left = this.posX + this.width/2 - this.flwrDisplayWidth/2 + 'px';
-      this.flwrDiv.style.top = this.posY - this.initialPos + 'px';
-      // this.flwrDiv.style.zIndex = '-1'; 
-      // this.flwrDiv.style.display = 'none'; 
-      gameMap.append(this.flwrDiv);
-  }
-}
 class mainPlayer extends gameSprite {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
     super(objectType, elmId, posX, posY, width, height, currentDirection);
-    this.flwrTrain = new pathFinderSprite(elmId, posX, posY, width, height);
+    //this.flwrTrain = new pathFinderSprite(this.elmId, this.posX, this.posY, this.width, this.height, this.currentDirection);
+  //  console.log(this.colliderFoot);
+    console.log(this);
+    this.flwrTrain = new pathFinderSprite(this);
+    
     this.velocity = 5;
+    this.inventory = [];
     // this.staticSprite;
   }
-  // step() { // going insane 
-  //   // super.step(); 
-  //   // this.flowerTrain.moveTrain(); 
-  // }
+ collectWorldItem(asset) {
+      // if (this.isCollectable && this.isColliding(posX, posY)) {
+      // }
+    console.log(asset);
+    console.log(`Picked up a ${asset.objectType}!`);
+
+    // let trainElms = this.flwrTrain.getElementsByClassName('flowerTrain');
+    console.log(this.flwrTrain.flwrTrain); //need to change this array name
+    let trainElms = this.flwrTrain.flwrTrain;
+
+    let emptySlot = -1;
+    for (let i = 0; i < trainElms.length; i++) {
+      if (!trainElms[i].hasChildNodes()) {
+        emptySlot = i;
+        break;
+      }
+    }
+    if (emptySlot !== -1) {
+      let flwr = document.createElement('div');
+      trainElms[emptySlot].append(flwr);
+      trainElms[emptySlot].style.backgroundColor = 'yellow'; //im dumb
+
+      console.log(this.playerId, asset.elmId);
+
+      gameAsset.delete(asset);
+      asset.removeElm(asset.elmId);
+      socket.emit('worldItemCollected', {asset: asset});
+    } else {
+      console.log("no empty slot");
+    }
+  }
+  step() { // going insane 
+    super.step(); 
+    this.flwrTrain.moveTrain(); 
+  }
   getElm() {
     return document.getElementById(this.playerId);
+  }
+  setFacingDirection(direction) {
+    super.setFacingDirection(direction);
+    this.flwrTrain.currentDirection = direction;
+    this.flwrTrain.moveTrain();
   }
   updatePosition() {
     this.setZIndex();
     this.elm.style.left = `${this.posX}px`;
     this.elm.style.top = `${this.posY}px`;
+    // this.flwrTrain.moveTrain();
   }
 }
 class guestPlayer extends mainPlayer {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
     super(objectType, elmId, posX, posY, width, height, currentDirection);
-    this.flwrTrain = new pathFinderSprite(elmId, posX, posY, width, height);
+    // this.flwrTrain = new pathFinderSprite(elmId, posX, posY, width, height);
   }
 }
 // console.log(gameAsset.instances);
@@ -517,7 +604,7 @@ socket.on('gameObjects', function (objectInfo) {
   
   // });
   socket.on('playerMoved', function (playerInfo) {
-      console.log(playerInfo.posX, playerInfo.posY, playerInfo.currentDirection);
+      //console.log(playerInfo.posX, playerInfo.posY, playerInfo.currentDirection);
     let movedPlayer = activePlayers.find(player => player.playerId === playerInfo.playerId);
     //  console.log(movedPlayer);
       // if (!movedPlayer) { // return from fn() => false
@@ -531,7 +618,38 @@ socket.on('gameObjects', function (objectInfo) {
       // movedPlayer.currentDirection = playerInfo.direction;
       // console.log("after updating movement: ", movedPlayer.posX, movedPlayer.posY);
       movedPlayer.updatePosition();
-      console.log(movedPlayer);
+      // console.log(movedPlayer);
+  });
+  socket.on('updateWorldItem', function (itemInfo) {
+    console.log(itemInfo);
+
+    let item = itemInfo.asset;
+
+    let gameAssetInstance = gameAsset.instances.find(asset => asset.elmId === item.elmId);
+
+    console.log(gameAssetInstance);
+
+    gameAsset.delete(gameAssetInstance);
+    // console.log(gameAsset.instances);
+    gameAssetInstance.removeElm();
+
+    // if (typeof asset === 'object') {
+    //   console.log('asset is an object');
+    // } else {
+    //   console.log('asset is not an object');
+    // }
+
+    // if (typeof asset.removeElm === 'function') {
+    //   console.log('asset.removeElm is a function');
+    // } else {
+    //   console.log('asset.removeElm is not a function');
+    // }
+
+    // console.log(asset);
+
+    // gameAsset.delete(asset);
+    // // console.log(gameAsset.instances);
+    // asset.removeElm();
   });
   // socket.on('playerToFace', function (playerInfo) {
   socket.on('disconnectUser', function (playerId) {

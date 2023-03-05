@@ -294,7 +294,6 @@ class mainPlayer extends GameSprite {
 
   }
 }
-
 class guestPlayer extends GameSprite {
   constructor(elmId, objectType, posX, posY, width, height) {
     super(elmId, objectType, posX, posY, width, height);

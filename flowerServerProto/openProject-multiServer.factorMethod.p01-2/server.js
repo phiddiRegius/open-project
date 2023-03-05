@@ -202,6 +202,11 @@ io.on('connection', function (socket) {
       console.log(movementData.playerId);
     }
   });
+  socket.on('worldItemCollected', function (itemData) { //NEED TO ADD PROPERTY FOR IF ISCOLLECTED NOT GONNA DO IT RN
+    // console.log('collectedItem: ', itemData);
+      socket.broadcast.emit('updateWorldItem', itemData);
+  });
+
   socket.on('disconnect', function () {
     console.log('user disconnected: ', playerId);
     // console.log(Object.keys(players));
