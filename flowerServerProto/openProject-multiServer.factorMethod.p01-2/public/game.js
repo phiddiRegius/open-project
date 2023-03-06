@@ -239,6 +239,7 @@ class gameAsset {
       staticSpriteObject: () => this.createObject("staticSprite"),
       worldItem: () => this.createItem(),
       gameSprite: () => this.createGameSprite(),
+      followerSprite: () => this.createGameSprite("follower"),
       mainPlayer: () => this.createPlayer("main"),
       guestPlayer: () => this.createPlayer("guest")
     };
@@ -295,9 +296,11 @@ class gameAsset {
     itemElm.classList.add("item");
     return itemElm;
   }
-  createGameSprite() {
+  createGameSprite(type) { // need to have different types
     let gameSpriteElm = document.createElement("div");
-    gameSpriteElm.classList.add("game-sprite");
+    gameSpriteElm.id = this.elmId;
+    gameSpriteElm.classList.add("gameSprite");
+    gameSpriteElm.classList.add(type + "Sprite");
     return gameSpriteElm;
   }
   createPlayer(type) {
@@ -331,7 +334,7 @@ class worldItem extends worldObject {
     super(objectType, elmId, posX, posY, width, height);
     this.collidable = false;
     this.isCollectable = true;
-    console.log(this);
+    // console.log(this);
   }
   // static collectWorldItem() {
   //   if (this.isCollectable && this.isColliding(posX, posY)) {
@@ -344,12 +347,14 @@ class pathFinderSprite { // using this for the flowerTrain
     this.player = player;
     this.currentDirection = player.currentDirection;
     this.colliderFoot = player.colliderFoot;
+    // train stuff
     this.maxPassengers = 5;
     this.flwrTrain = [];
     this.flwrDisplayWidth = 10;
     this.flwrDisplayHeight = 10;
     this.initialPos = 10;
     this.collidable = false;
+    // slug stuff?
   }
   moveTrain() {
     let buffer = 15; // space
@@ -435,6 +440,61 @@ class gameSprite extends gameAsset {
     }
   }
 }
+class followerSprite extends gameSprite {
+  constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
+    super(objectType, elmId, posX, posY, width, height, currentDirection);
+    this.currentDirection;
+    this.velocity = 1;
+    this.collidable = false; // I just dont want the headache right now
+    this.isTargetting = false;
+
+    console.log(gameAsset.instances);
+    // console.log(this.targetPlayer);
+  }
+  static followTarget(follower, target) {
+    follower.isTargetting = true;
+    console.log(`${follower.elmId} is going to follow ${target.elmId}`);
+
+    let moveInterval = setInterval(() => {
+      let finishedMoving = follower.move(target);
+      if (finishedMoving) {
+        clearInterval(moveInterval);
+        console.log(`reached destination, clear interval`);
+      }
+    }, 100);
+}
+move(target) {
+  let dx = Math.abs(target.posX - this.posX);
+  let dy = Math.abs(target.posY - this.posY);
+  let distance = dx + dy;
+
+  // Check if follower is already at the target position
+  if (distance === 0) {
+    console.log(`${this.elmId} caught the thing`);
+    return true;
+  }
+  let direction = "";
+  if (dx > dy) {
+    direction = target.posX < this.posX ? "left" : "right";
+  } else {
+    direction = target.posY < this.posY ? "up" : "down";
+  }
+  if (direction === "left") {
+    this.posX -= this.velocity;
+  } else if (direction === "right") {
+    this.posX += this.velocity;
+  } else if (direction === "up") {
+    this.posY -= this.velocity;
+  } else if (direction === "down") {
+    this.posY += this.velocity;
+  }
+
+  // Update follower element position
+  this.updatePosition(this.posX, this.posY);
+
+  return false;
+}
+}
 class mainPlayer extends gameSprite {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
     super(objectType, elmId, posX, posY, width, height, currentDirection);
@@ -506,7 +566,7 @@ class guestPlayer extends mainPlayer {
 // console.log(gameAsset.instances);
 socket.on('gameObjects', function (objectInfo) {
   objectInfo.forEach((info) => {
-        let { objectType, elmId, posX, posY, width, height } = info; // deconstruct objectInfo
+        let { objectType, elmId, posX, posY, width, height, currentDirection } = info; // deconstruct objectInfo
 
         if(objectType == 'staticSprite') {
           let staticSprite = new staticSpriteObject(objectType, elmId, posX, posY, width, height);
@@ -516,9 +576,56 @@ socket.on('gameObjects', function (objectInfo) {
           let flower = new worldItem(objectType, elmId, posX, posY, width, height);
             flower.createElement();
             gameObjects.push(flower);
+        } if(objectType == 'enemySprite') {
+          let slug = new followerSprite(objectType, elmId, posX, posY, width, height, currentDirection);
+            slug.createElement();
         }
     });
+
+    
+    // let gettingFollowers = gameAsset.instances.filter(asset => asset instanceof followerSprite);
+    
+    // if(gameAsset.instances.length > 0) {
+    //     let gettingTargets = gameAsset.instances.filter(asset => asset instanceof mainPlayer || asset instanceof guestPlayer || asset instanceof worldItem);
+    //       console.log(gettingTargets);
+
+    //       socket.emit('hitList', {list: gettingTargets}); 
+    //       // should emit potential targets to the server then determine => 
+    //       // let randomIndex = Math.floor(Math.random() * gettingTargets.length);
+    //       // let target = gettingTargets[randomIndex];
+
+    //       // console.log(target);
+    //       // followerSprite.followTarget(target); // what if I emit first => tell server to give everyone this one?
+    //       // // no need to tell server who the potential targets are then update
+    //   }
   });
+socket.on('updateHitList', function (targetInfo) {
+  console.log(targetInfo); // THESE ARE OBJECTS
+
+      let gettingFollowers = gameAsset.instances.filter(asset => asset instanceof followerSprite);
+      console.log(gettingFollowers);
+
+      let numFollowers = gettingFollowers.length;
+      let numTargets = targetInfo.length;
+
+      for (let i = 0; i < numFollowers; i++) {
+        let targetIndex = i % numTargets;
+        let target = targetInfo[targetIndex];
+        let follower = gettingFollowers[i];
+        followerSprite.followTarget(follower, target);
+      }
+ 
+  // followerSprite.followTarget(target);
+});
+// socket.on('gameSprites', function (spriteInfo) { // do I need a seperate emitter if I can seperate class instance by object type like in gameObjects?
+//   spriteInfo.forEach((info) => {
+//     let { objectType, elmId, posX, posY, width, height, currentDirection } = info; // deconstruct spriteInfo
+
+//     let slug = new gameSprite(objectType, elmId, posX, posY, width, height, currentDirection);
+//       slug.createElement();
+
+//   });
+// })
   socket.on('playerId', function(playerId) {
     console.log(`Received ${playerId} from server`);
   });
@@ -544,7 +651,7 @@ socket.on('gameObjects', function (objectInfo) {
             // mainPlayerInstance.displayFlowerTrain();
 
             activePlayers.push(mainPlayerInstance);
-            console.log(assignedSprite);
+            // console.log(assignedSprite);
             // assignedSprite.removeElm(assignedSprite.elmId);
             assignedSprite.elm.style.display = 'none';
             assignedSprite.collidable = false;

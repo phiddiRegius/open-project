@@ -17,9 +17,11 @@ app.get('/', (req, res) => {
 
 players = {};
 let gameObjects = [];
+let gameSprites = [];
 let flowers = [];
 // let worldObjects = [];
-let gameAssets = [...gameObjects, ...flowers]; 
+// let gameAssets = [...gameObjects, ...flowers]; 
+let gameAssets = [...gameObjects]; 
 
 let numOfGameObjects = 5;
 let numOfFlowers = 5;
@@ -92,7 +94,7 @@ function getNewCoordinate() {
   return bestCoordinate;
 }
 
-for (let i = 0; i < numOfGameObjects; i++) {
+for (let i = 0; i < numOfGameObjects; i++) { //flowerPots
   let coordinate = getNewCoordinate();
   // console.log(":", coordinate);
 
@@ -109,8 +111,24 @@ for (let i = 0; i < numOfGameObjects; i++) {
   gameObjects.push(flowerPot);
 }
 
-for (let i = 0; i < numOfFlowers; i++) {
-  let coordinate = getNewCoordinate();
+for (let i = 0; i < numOfGameObjects; i++) { // slugs
+  // let coordinate = getNewCoordinate();
+  // console.log(":", coordinate);
+
+  let slug = {
+    elmId: 'slug' + (i + 1),
+    objectType: 'enemySprite',
+    playerId: 'slug',
+    posX:  randomPosition(50, mapWidth - 50),
+    posY:  randomPosition(50, mapWidth - 50),
+    width: 24,
+    height: 36,
+  };
+  gameObjects.push(slug);
+}
+
+for (let i = 0; i < numOfFlowers; i++) { // flowers
+  // let coordinate = getNewCoordinate();
   // console.log(":", coordinate);
 
   // states: 
@@ -121,8 +139,8 @@ for (let i = 0; i < numOfFlowers; i++) {
   let flower = {
     elmId: "flwr" + (i + 1),
     objectType: "flower",
-    posX: coordinate[0], //randomPosition(50, 250),
-    posY: coordinate[1], //randomPosition(50, 250),
+    posX:  randomPosition(50, mapWidth - 50), //randomPosition(50, 250),
+    posY:  randomPosition(50, mapWidth - 50), //randomPosition(50, 250),
     width: 10,
     height: 10,
     isObject: true,
@@ -135,8 +153,6 @@ for (let i = 0; i < numOfFlowers; i++) {
 }
 
 // console.log(sprites)
-
-
 io.on('connection', function (socket) {
   const playerId = uuidv4();
 
@@ -145,13 +161,16 @@ io.on('connection', function (socket) {
   // emit the non-active player elements to the map
   socket.emit('gameObjects', gameObjects);
 
-   // emit all worldObjects to the map
-   socket.emit('placeFlowers', flowers);
-
   // emit current players to all users on the main page
   // console.log("length of players object", Object.keys(players).length);
 
   socket.emit('currentPlayers', players);
+
+  let gettingTargets = gameObjects.filter(object => object.objectType == 'flower' ||  object.objectType == 'player');
+  // console.log("Can assign these targets: ", gettingTargets);
+  shuffleArray(gettingTargets); // so I dont have to randomize 
+  console.log(gettingTargets);
+  socket.emit('updateHitList', gettingTargets);
 
   socket.on('startGame', function () {
     // if (players[playerId]) { // maybe this should go before the player is created and after the client is updated? 
@@ -177,6 +196,11 @@ io.on('connection', function (socket) {
     staticSprite.playerId = playerId;
 
     //console.log(players);
+  //   let gettingTargets = gameObjects.filter(object => object.objectType == 'flower' ||  object.objectType == 'player');
+  // // console.log("Can assign these targets: ", gettingTargets);
+  //     shuffleArray(gettingTargets); // so I dont have to randomize 
+  //     console.log(gettingTargets);
+  //     socket.emit('assignTargets', gettingTargets);
 
     // socket.emit('playerId', playerId);
     socket.emit('currentPlayers', players);

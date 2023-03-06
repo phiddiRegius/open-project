@@ -69,6 +69,10 @@ p {
     position: absolute;
     background-color: rgb(225, 227, 118);
 }
+.followerSprite {
+    position: absolute;
+    background-color: rgb(237, 161, 84);
+}
 .mainPlayer {
     position: absolute;
     top: 0;
