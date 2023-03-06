@@ -261,6 +261,6 @@ io.on('connection', function (socket) {
 });
 
 // change 3000 to port
-server.listen(port, () => {
+server.listen(process.env.PORT, () => {
   console.log('listening on *:3000');
 });
