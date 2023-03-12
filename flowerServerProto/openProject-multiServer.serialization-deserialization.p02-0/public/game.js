@@ -429,6 +429,7 @@ class gameSprite extends gameAsset {
     } else if (this.faceDown) {
       nextStepY += this.velocity;
     }
+    // request server to move instead of moving here => isColliding and updatePosition
     if (!this.isColliding(nextStepX, nextStepY)) {
       this.posX = nextStepX;
       this.posY = nextStepY;
@@ -436,7 +437,7 @@ class gameSprite extends gameAsset {
       this.updateServerPosition();
       // this.moveTrain();
     } else {
-        // stuff for moving if the dist is less than this.velocity but greater than 0
+        // for moving if the dist is less than this.velocity but greater than 0
     }
   }
 }
@@ -565,27 +566,28 @@ class guestPlayer extends mainPlayer {
 }
 // console.log(gameAsset.instances);
 socket.on('gameObjects', function (objectInfo) {
+  console.log(objectInfo);
   objectInfo.forEach((info) => {
         let { objectType, elmId, posX, posY, width, height, currentDirection } = info; // deconstruct objectInfo
 
         if(objectType == 'staticSprite') {
           let staticSprite = new staticSpriteObject(objectType, elmId, posX, posY, width, height);
             staticSprite.createElement();
-            gameObjects.push(staticSprite);
+            // gameObjects.push(staticSprite);
         } if(objectType == 'flower') {
           let flower = new worldItem(objectType, elmId, posX, posY, width, height);
             flower.createElement();
-            gameObjects.push(flower);
+          //   gameObjects.push(flower);
         } if(objectType == 'enemySprite') {
           let slug = new followerSprite(objectType, elmId, posX, posY, width, height, currentDirection);
             slug.createElement();
+            //socket.emit('assignTarget', { slugId: slug.elmId, targetType: 'player', targetId: playerId });
         }
-        
     });
 
     // console.log(gameAsset.instances);
     // socket.emit('updateGameAssets', gameAsset.instances);
-    socket.emit('updateGameAssets', JSON.stringify(gameAsset.instances));
+    // socket.emit('updateGameAssets', JSON.stringify(gameAsset.instances));
 
     // let gettingFollowers = gameAsset.instances.filter(asset => asset instanceof followerSprite);
     
@@ -644,7 +646,7 @@ socket.on('gameObjects', function (objectInfo) {
           return;
         }
         console.log(`Adding mainPlayer-${playerId} to activePlayers`);
-          let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == players[playerId].elmId);
+          let assignedSprite = gameAsset.instances.find(staticSprite => staticSprite.elmId == players[playerId].elmId);
             // console.log(assignedSprite); // check if param values are correct for the assigned'static'Sprite 
           mainPlayerInstance = new mainPlayer('player', assignedSprite.elmId,  players[playerId].posX,  players[playerId].posY, assignedSprite.width, assignedSprite.height, players[playerId].currentDirection);
             mainPlayerInstance.playerId = playerId
@@ -668,7 +670,7 @@ socket.on('gameObjects', function (objectInfo) {
           return;
         }
         console.log(`Adding guestPlayer-${playerId} to activePlayers`);
-        let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == players[playerId].elmId);
+        let assignedSprite = gameAsset.instances.find(staticSprite => staticSprite.elmId == players[playerId].elmId);
             // console.log(assignedSprite); // check if parameter values are correct for the assigned'static'Sprite 
           guestPlayerInstance = new guestPlayer('player', assignedSprite.elmId,  players[playerId].posX,  players[playerId].posY, assignedSprite.width, assignedSprite.height, players[playerId].currentDirection);
             guestPlayerInstance.playerId = playerId;
@@ -690,7 +692,7 @@ socket.on('gameObjects', function (objectInfo) {
       return;
     }
     console.log(`Adding guestPlayer-${playerInfo.playerId} to activePlayers`);
-    let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == playerInfo.elmId);
+    let assignedSprite = gameAsset.instances.find(staticSprite => staticSprite.elmId == playerInfo.elmId);
   
     guestPlayerInstance = new guestPlayer('player', assignedSprite.elmId, playerInfo.posX, playerInfo.posY, assignedSprite.width, assignedSprite.height, playerInfo.currentDirection);
     guestPlayerInstance.playerId = playerInfo.playerId;
@@ -700,20 +702,7 @@ socket.on('gameObjects', function (objectInfo) {
     assignedSprite.elm.style.display = 'none';
     assignedSprite.collidable = false;
   });
-  //   let playerTurned = activePlayers.find(player => player.objectType == playerInfo.playerId);
-  //     playerTurned.isFacing = playerInfo.isFacing;
-  
-  //   if(playerInfo.isFacing == "right") {
-  //     playerTurned.isFacingRight();
-  //   } else if(playerInfo.isFacing == "left") {
-  //     playerTurned.isFacingLeft();
-  //   } else if(playerInfo.isFacing == "up") {
-  //     playerTurned.isFacingUp();
-  //   } else if(playerInfo.isFacing == "down") {
-  //     playerTurned.isFacingDown();
-  //   }
-  
-  // });
+
   socket.on('playerMoved', function (playerInfo) {
       //console.log(playerInfo.posX, playerInfo.posY, playerInfo.currentDirection);
     let movedPlayer = activePlayers.find(player => player.playerId === playerInfo.playerId);
@@ -762,6 +751,21 @@ socket.on('gameObjects', function (objectInfo) {
     // // console.log(gameAsset.instances);
     // asset.removeElm();
   });
+  socket.on('updateClientPosition', function (movementData) {
+    // console.log(movementData);
+
+    for (let i = 0; i < gameAsset.instances.length; i++) {
+      if (gameAsset.instances[i].elmId === movementData.id) {
+        // Update posX and posY properties with new values
+        gameAsset.instances[i].posX = movementData.x;
+        gameAsset.instances[i].posY = movementData.y;
+
+        gameAsset.instances[i].updatePosition();
+        break; // Exit loop once instance is found and updated
+      }
+    }
+
+  });
   // socket.on('playerToFace', function (playerInfo) {
   socket.on('disconnectUser', function (playerId) {
     let playerIndex = activePlayers.findIndex(player => player.playerId === playerId);
@@ -770,7 +774,6 @@ socket.on('gameObjects', function (objectInfo) {
       return;
     }
     let disconnectedPlayer = activePlayers[playerIndex];
-    // let assignedSprite = document.getElementById(disconnectedPlayer.elmId);
 
       activePlayers.splice(playerIndex, 1);
 
@@ -778,7 +781,7 @@ socket.on('gameObjects', function (objectInfo) {
       if (gameAssetInstance) {
         console.log(gameAssetInstance);
 
-        let assignedSprite = gameObjects.find(staticSprite => staticSprite.elmId == disconnectedPlayer.elmId);
+        let assignedSprite = gameAsset.instances.find(staticSprite => staticSprite.elmId == disconnectedPlayer.elmId);
         // console.log(assignedSprite);
           assignedSprite.posX = gameAssetInstance.posX;
           assignedSprite.posY = gameAssetInstance.posY;
