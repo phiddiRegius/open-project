@@ -30,6 +30,14 @@ let mainContainer = document.createElement('div');
   mainContainer.style.width = window.innerWidth;
   mainContainer.style.width = window.innerHeight;
   document.body.append(mainContainer);
+
+let playerGUI = document.createElement('div');
+  playerGUI.setAttribute('id', 'playerGUI');
+
+let currencyCounter = document.createElement('div');
+currencyCounter.setAttribute('id', 'currencyCounter');
+
+playerGUI.append(currencyCounter);
   
 let startMenu = document.createElement('div');
   startMenu.setAttribute('id', 'startMenu');
@@ -37,6 +45,14 @@ let startMenu = document.createElement('div');
 let startButton = document.createElement('button');
   startButton.setAttribute('id', 'startButton');
   startButton.innerHTML = 'Start';
+
+let plantButton = document.createElement('button');
+  plantButton.setAttribute('id', 'plantButton');
+  plantButton.innerHTML = 'Plant Flower';
+
+  // plantButton.addEventListener('click', function() {
+  //   mainPlayer.plantFlower();
+  // })
 
 // DEBUG PANEL
 // let debugToggle = document.createElement('input');
@@ -67,7 +83,9 @@ let gameMap = document.createElement('div');
   gameMap.style.width = `${mapWidth}px`;
   gameMap.style.height = `${mapHeight}px`;
 
-// KEY VARS
+
+
+// key stuff
 const leftKey = "ArrowLeft";
 const rightKey = "ArrowRight";
 const upKey = "ArrowUp";
@@ -118,7 +136,7 @@ if(gameIsStarted === true) {
 };
 
 let socket = io();
-mainContainer.append(startMenu, gameMap);
+mainContainer.append(playerGUI, startMenu, gameMap);
 
 startButton.addEventListener('click', () => {
   if (activePlayers.length === 5) {
@@ -127,10 +145,18 @@ startButton.addEventListener('click', () => {
     socket.emit('startGame');
     document.body.classList.add('gameIsStarted');
     startButton.style.display = "none";
+    startMenu.append(plantButton);
+    playerGUI.style.display = "block";
     gameIsStarted = true;
+    backgroundAudio();
   }
 });
 
+function backgroundAudio() {
+  let forestSound = new Audio('assets/sound/forest.mp3');
+  forestSound.play();
+  forestSound.loop = true;
+}
 // gameAssets superclass => environment
 // worldObjects & gameSprites
 // worldObjects => things in environment
@@ -170,7 +196,6 @@ class gameAsset {
     let index = gameAsset.instances.indexOf(instance);
     if (index !== -1) {
       gameAsset.instances.splice(index, 1);
-      gameSprite.instances.splice(index, 1);
     }
   }
   setZIndex() {
@@ -262,9 +287,20 @@ class gameAsset {
     this.colliderFoot.style.width = `${this.width}px`;
     this.colliderFoot.style.height = `${this.height * 0.25}px`;
 
+
  if (className === "mainPlayer" || className === "guestPlayer") {
     elm.setAttribute("id", this.playerId);
     elm.innerHTML = `<p class="debugTag">${this.playerId}</p>`;
+
+    this.canvas = document.createElement('canvas');
+    this.canvas.style.width = this.width;
+    this.canvas.style.height = this.height;
+    this.canvas.style.position = 'absolute';
+    this.canvas.style.top = '0';
+    this.canvas.style.left = '0';
+
+    this.ctx = this.canvas.getContext('2d');
+    // elm.append(this.canvas);
   } else {
     elm.innerHTML = `<p class="debugTag">${this.elmId}</p>`;
   }
@@ -435,11 +471,13 @@ class gameSprite extends gameAsset {
       this.posY = nextStepY;
       this.updatePosition();
       this.updateServerPosition();
+      this.renderSheet();
       // this.moveTrain();
     } else {
         // for moving if the dist is less than this.velocity but greater than 0
     }
   }
+  
 }
 class followerSprite extends gameSprite {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
@@ -448,6 +486,7 @@ class followerSprite extends gameSprite {
     this.velocity = 1;
     this.collidable = false; // I just dont want the headache right now
     this.isTargetting = false;
+    this.inventory;
 
     // console.log(gameAsset.instances);
     // console.log(this.targetPlayer);
@@ -463,38 +502,55 @@ class followerSprite extends gameSprite {
         console.log(`reached destination, clear interval`);
       }
     }, 100);
-}
-move(target) {
-  let dx = Math.abs(target.posX - this.posX);
-  let dy = Math.abs(target.posY - this.posY);
-  let distance = dx + dy;
-
-  // Check if follower is already at the target position
-  if (distance === 0) {
-    console.log(`${this.elmId} caught the thing`);
-    return true;
   }
-  let direction = "";
-  if (dx > dy) {
-    direction = target.posX < this.posX ? "left" : "right";
-  } else {
-    direction = target.posY < this.posY ? "up" : "down";
-  }
-  if (direction === "left") {
-    this.posX -= this.velocity;
-  } else if (direction === "right") {
-    this.posX += this.velocity;
-  } else if (direction === "up") {
-    this.posY -= this.velocity;
-  } else if (direction === "down") {
-    this.posY += this.velocity;
-  }
+  collectWorldItem(asset) {
+    let exclSound = new Audio('assets/sound/exclamation.mp3');
+        exclSound.play();
+        
+    console.log(asset);
+    console.log(`Picked up a ${asset.objectType}!`);
 
-  // Update follower element position
-  this.updatePosition(this.posX, this.posY);
+    console.log(this.playerId, asset.elmId);
 
-  return false;
-}
+    socket.emit('worldItemCollected', {asset: asset});
+    this.inventory.push(asset);
+    console.log(`${this.playerId} inventory: ${JSON.stringify(this.inventory.length)}`);
+    gameAsset.delete(asset);
+
+    asset.removeElm(asset.elmId);
+    this.updateCurrencyCounter();
+  }
+  move(target) {
+    let dx = Math.abs(target.posX - this.posX);
+    let dy = Math.abs(target.posY - this.posY);
+    let distance = dx + dy;
+
+    // Check if follower is already at the target position
+    if (distance === 0) {
+      console.log(`${this.elmId} caught the thing`);
+      return true;
+    }
+    let direction = "";
+    if (dx > dy) {
+      direction = target.posX < this.posX ? "left" : "right";
+    } else {
+      direction = target.posY < this.posY ? "up" : "down";
+    }
+    if (direction === "left") {
+      this.posX -= this.velocity;
+    } else if (direction === "right") {
+      this.posX += this.velocity;
+    } else if (direction === "up") {
+      this.posY -= this.velocity;
+    } else if (direction === "down") {
+      this.posY += this.velocity;
+    }
+
+    // Update follower element position
+    this.updatePosition(this.posX, this.posY);
+
+    return false;
+  }
 }
 class mainPlayer extends gameSprite {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
@@ -502,54 +558,118 @@ class mainPlayer extends gameSprite {
     //this.flwrTrain = new pathFinderSprite(this.elmId, this.posX, this.posY, this.width, this.height, this.currentDirection);
   //  console.log(this.colliderFoot);
     console.log(this);
-    this.flwrTrain = new pathFinderSprite(this);
+    // this.flwrTrain = new pathFinderSprite(this);
+    this.currencyCounter = document.getElementById('currencyCounter');
     
     this.velocity = 5;
     this.inventory = [];
+    //
+    this.numFrames = 4;
+    this.currentFrame = 0;
+
+    this.spriteSheet = new Image();
+    this.spriteSheet.src = 'assets/player/playerSheet.png'
+    // this.renderSheet();
     // this.staticSprite;
+    let self = this;
+      this.spriteSheet.onload = function() {
+      // self.renderSheet();
+    }
   }
- collectWorldItem(asset) {
-      // if (this.isCollectable && this.isColliding(posX, posY)) {
-      // }
+  // renderSheet() {
+  //   let spriteSheetX = 0;
+  //   let spriteSheetY = 0;
+
+  //   if (this.currentFrame < this.numFrames) {
+  //     spriteSheetX = this.currentFrame * this.width;
+  //     this.currentFrame++;
+  //   } else {
+  //     this.currentFrame = 0;
+  //   }
+
+  //   if (this.faceDown) {
+  //     spriteSheetY = 0;
+  //   } else if (this.faceUp) {
+  //     spriteSheetY = this.height;
+  //   } else if (this.faceLeft) {
+  //     spriteSheetY = this.height * 2;
+  //   } else if (this.faceRight) {
+  //     spriteSheetY = this.height * 3;
+  //   }
+  //   // image, sx, sy, sWidth, sHeight, dx, dy, dWith, dHeight
+  //   this.ctx.drawImage(this.spriteSheet, spriteSheetX, spriteSheetY, this.width, this.height, this.posX, this.posY, this.width, this.height);
+  // }
+  updateCurrencyCounter() {
+    this.currencyCounter.innerHTML = this.inventory.length; 
+  }
+  static plantFlower() {
+    if (this.inventory.length > 0) {
+      let flowerToPlant = this.inventory.pop();
+      console.log(flowerToPlant);
+      this.updateCurrencyCounter();
+    } else {
+      console.log('no flowers in inventory')
+    }
+  }
+  collectWorldItem(asset) {
+    // if (this.isCollectable && this.isColliding(posX, posY)) {
+    // }
+    let exclSound = new Audio('assets/sound/exclamation.mp3');
+        exclSound.play();
+        
     console.log(asset);
     console.log(`Picked up a ${asset.objectType}!`);
 
-    // let trainElms = this.flwrTrain.getElementsByClassName('flowerTrain');
-    console.log(this.flwrTrain.flwrTrain); //need to change this array name
-    let trainElms = this.flwrTrain.flwrTrain;
+    // console.log(this.flwrTrain.flwrTrain); //need to change this array name
+    // let trainElms = this.flwrTrain.flwrTrain;
 
-    let emptySlot = -1;
-    for (let i = 0; i < trainElms.length; i++) {
-      if (!trainElms[i].hasChildNodes()) {
-        emptySlot = i;
-        break;
-      }
-    }
-    if (emptySlot !== -1) {
-      let flwr = document.createElement('div');
-      trainElms[emptySlot].append(flwr);
-      trainElms[emptySlot].style.backgroundColor = 'yellow'; //im dumb
+    // let emptySlot = -1;
+    // for (let i = 0; i < trainElms.length; i++) {
+    //   if (!trainElms[i].hasChildNodes()) {
+    //     emptySlot = i;
+    //     break;
+    //   }
+    // }
+    // if (emptySlot !== -1) {
+    //   let flwr = document.createElement('div');
+    //   trainElms[emptySlot].append(flwr);
+    //   trainElms[emptySlot].style.backgroundColor = 'yellow'; //im dumb
 
       console.log(this.playerId, asset.elmId);
 
-      gameAsset.delete(asset);
-      asset.removeElm(asset.elmId);
       socket.emit('worldItemCollected', {asset: asset});
-    } else {
-      console.log("no empty slot");
-    }
+      this.inventory.push(asset);
+      console.log(`${this.playerId} inventory: ${JSON.stringify(this.inventory.length)}`);
+      gameAsset.delete(asset);
+
+      asset.removeElm(asset.elmId);
+      this.updateCurrencyCounter();
+    // } else {
+    //   console.log("no empty slot");
+    // }
   }
-  step() { // going insane 
+  step() { 
     super.step(); 
-    this.flwrTrain.moveTrain(); 
+    // this.flwrTrain.moveTrain(); 
   }
   getElm() {
     return document.getElementById(this.playerId);
   }
   setFacingDirection(direction) {
     super.setFacingDirection(direction);
-    this.flwrTrain.currentDirection = direction;
-    this.flwrTrain.moveTrain();
+    if (this.faceLeft) {
+      this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
+    } else if (this.faceRight) {
+      this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
+    } else if (this.faceUp) {
+      this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
+    } else if (this.faceDown) {
+      this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
+    }
+   
+
+    // this.flwrTrain.currentDirection = direction;
+    // this.flwrTrain.moveTrain();
   }
   updatePosition() {
     this.setZIndex();
@@ -605,33 +725,6 @@ socket.on('gameObjects', function (objectInfo) {
     //       // // no need to tell server who the potential targets are then update
     //   }
   });
-// socket.on('updateHitList', function (targetInfo) {
-//   console.log(targetInfo); // THESE ARE OBJECTS
-
-//       let gettingFollowers = gameAsset.instances.filter(asset => asset instanceof followerSprite);
-//       console.log(gettingFollowers);
-
-//       let numFollowers = gettingFollowers.length;
-//       let numTargets = targetInfo.length;
-
-//       for (let i = 0; i < numFollowers; i++) {
-//         let targetIndex = i % numTargets;
-//         let target = targetInfo[targetIndex];
-//         let follower = gettingFollowers[i];
-//         followerSprite.followTarget(follower, target);
-//       }
- 
-//   // followerSprite.followTarget(target);
-// });
-// socket.on('gameSprites', function (spriteInfo) { // do I need a seperate emitter if I can seperate class instance by object type like in gameObjects?
-//   spriteInfo.forEach((info) => {
-//     let { objectType, elmId, posX, posY, width, height, currentDirection } = info; // deconstruct spriteInfo
-
-//     let slug = new gameSprite(objectType, elmId, posX, posY, width, height, currentDirection);
-//       slug.createElement();
-
-//   });
-// })
   socket.on('playerId', function(playerId) {
     console.log(`Received ${playerId} from server`);
   });
@@ -702,7 +795,6 @@ socket.on('gameObjects', function (objectInfo) {
     assignedSprite.elm.style.display = 'none';
     assignedSprite.collidable = false;
   });
-
   socket.on('playerMoved', function (playerInfo) {
       //console.log(playerInfo.posX, playerInfo.posY, playerInfo.currentDirection);
     let movedPlayer = activePlayers.find(player => player.playerId === playerInfo.playerId);
@@ -766,7 +858,6 @@ socket.on('gameObjects', function (objectInfo) {
     }
 
   });
-  // socket.on('playerToFace', function (playerInfo) {
   socket.on('disconnectUser', function (playerId) {
     let playerIndex = activePlayers.findIndex(player => player.playerId === playerId);
     if (playerIndex === -1) {

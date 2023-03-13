@@ -198,8 +198,6 @@ class eventManager { // not implementing this yet... will be a mediator for beha
 io.on('connection', function (socket) {
   const playerId = uuidv4();
 
-  
-
   console.log('a user connected: ', playerId);
  /**
    * For each game asset, I defined an objectType and numOfInstances to be generated.
@@ -222,7 +220,7 @@ io.on('connection', function (socket) {
           break;
         case 'enemySprite':
           for (let i = 0; i < numOfInstances; i++) {
-            let slug = new followerSprite(`enemySprite`, `slug${i+1}`, coordinate[i][0], coordinate[i][1], 24, 36);
+            let slug = new followerSprite(`enemySprite`, `slug${i+1}`, coordinate[i][0], coordinate[i][1], 32, 20);
             gameObjects.push(slug);
           }
           break;
@@ -336,7 +334,6 @@ io.on('connection', function (socket) {
     socket.emit('currentPlayers', players);
     socket.broadcast.emit('newPlayer', players[playerId]);
   })
-
   // socket.on('updateGameAssets', function (assets) {
   //   // console.log(`Receiving ${JSON.stringify(assets)}`);
   //   let parsedAssets = JSON.parse(assets);
@@ -362,6 +359,11 @@ io.on('connection', function (socket) {
   socket.on('worldItemCollected', function (itemData) { //NEED TO ADD PROPERTY FOR IF ISCOLLECTED 
     // console.log('collectedItem: ', itemData);
       socket.broadcast.emit('updateWorldItem', itemData);
+
+      console.log(itemData.elmId);
+
+      let flower = new worldItem(`flower`, `flwr${itemData.elmId}`, coordinate[i][0], coordinate[i][1], 10, 10);
+            
   });
 
   socket.on('disconnect', function () {
@@ -436,77 +438,58 @@ class gameAsset {
     this.posY = posY;
     this.width = width;
     this.height = height;
-    this.colliderFoot;
-    // this.elm;
-    //
-    this.playerId;
-    // this.zIndex;
-    // this.isVisible;
-    this.collidable = true;
-    // this.currentDirection = 'down';
-    // this.faceLeft = false;
-    // this.faceRight = false;
-    // this.faceUp = false;
-    // this.faceDown = true;
 
+    this.colliderFoot = {
+      width: this.width,
+      height: this.height * 0.25,
+      posX: this.posX,
+      posY: this.posY + (this.height * 0.75)
+    };
+  
+    this.playerId;
+    this.collidable = true;
     gameAsset.instances.push(this);
   }
   static delete(instance) {
     let index = gameAsset.instances.indexOf(instance);
     if (index !== -1) {
       gameAsset.instances.splice(index, 1);
-      gameSprite.instances.splice(index, 1);
     }
   }
-  // setZIndex() {
-  //   let colliderToe = this.posY - this.height;
-  //   let z = 1 + Math.floor(((colliderToe - 1) / mapHeight) *99);
-  //   this.elm.style.zIndex = z;
-  // }
-  // updatePosition() {
-  //   this.setZIndex();
-  //   if (this.elm) {
-  //     this.elm.style.left = `${this.posX}px`;
-  //     this.elm.style.top = `${this.posY}px`;
-  //   }
-  // }
   isColliding(nextStepX, nextStepY) {
     // Check if the player is WITHIN the bounds of the game map
     if (nextStepX >= 0 && nextStepX < mapWidth - this.width && nextStepY >= 0 && nextStepY < mapHeight - this.height) {
       // Check for collisions with all assets
       for (let i = 0; i < gameAsset.instances.length; i++) { //loop
         let asset = gameAsset.instances[i]; 
-        // if (asset !== this && asset.collidable) { // not me and is collidable
-        //   if ((nextStepX + this.colliderFoot.offsetWidth > asset.posX && nextStepX < asset.posX + asset.width) && 
-        //       (nextStepY + this.colliderFoot.offsetHeight > asset.posY && nextStepY < asset.posY + asset.height)) {
-        //     return true; // colliding 
-        //   }
-        // }
-        //   let assetToe = asset.posY + asset.height;
-        //   let playerToe = nextStepY + this.colliderFoot.offsetHeight;
-        //   if (nextStepX + this.colliderFoot.offsetWidth > asset.posX && nextStepX < asset.posX + asset.width &&
-        //     playerToe > asset.posY && nextStepY < assetToe) {
+
+        // let thisFootX = nextStepX + this.colliderFoot.posX;
+        // let thisFootY = nextStepY + this.colliderFoot.posY;
+        // let thisFootWidth = this.colliderFoot.width;
+        // let thisFootHeight = this.colliderFoot.height;
+
+        // if (asset !== this && asset.collidable) {
+        //   let assetFootX = asset.posX + asset.colliderFoot.width;
+        //   let assetFootY = asset.posY + asset.colliderFoot.height;
+        //   let playerFootX = nextStepX + this.colliderFoot.width;
+        //   let playerFootY = nextStepY + this.colliderFoot.height;
+        //   if (playerFootX + this.colliderFoot.offsetWidth > assetFootX && playerFootX < assetFootX + asset.colliderFoot.offsetWidth &&
+        //       playerFootY + this.colliderFoot.offsetHeight > assetFootY && playerFootY < assetFootY + asset.colliderFoot.offsetHeight) {
         //     return true; // colliding
         //   }
-        if (asset !== this && asset.collidable) {
-          let assetFootX = asset.posX + asset.colliderFoot.offsetLeft;
-          let assetFootY = asset.posY + asset.colliderFoot.offsetTop;
-          let playerFootX = nextStepX + this.colliderFoot.offsetLeft;
-          let playerFootY = nextStepY + this.colliderFoot.offsetTop;
-          if (playerFootX + this.colliderFoot.offsetWidth > assetFootX && playerFootX < assetFootX + asset.colliderFoot.offsetWidth &&
-              playerFootY + this.colliderFoot.offsetHeight > assetFootY && playerFootY < assetFootY + asset.colliderFoot.offsetHeight) {
-            return true; // colliding
-          }
-        }
-        // could actually use this to know at all time what the player is colliding with?
-        if (asset !== this && asset.isCollectable) {
-          // let assetFootX = asset.posX + asset.colliderFoot.offsetLeft;
-          // let assetFootY = asset.posY + asset.colliderFoot.offsetTop;
-          let playerFootX = nextStepX + this.colliderFoot.offsetLeft;
-          let playerFootY = nextStepY + this.colliderFoot.offsetTop;
-          if (playerFootX + this.colliderFoot.offsetWidth > asset.posX && playerFootX < asset.posX + asset.width &&
-              playerFootY + this.colliderFoot.offsetHeight > asset.posY && playerFootY < asset.posY + asset.height) {
-              this.collectWorldItem(asset);
+        // }
+      if (asset !== this && asset.isCollectable) {
+        // console.log(gameAsset.instances);
+          let thisFootX = nextStepX + this.colliderFoot.posX;
+          let thisFootY = nextStepY + this.colliderFoot.posY;
+        if (
+          thisFootX > asset.posX &&
+          thisFootX < asset.posX + asset.width &&
+          thisFootY > asset.posY && 
+          thisFootY < asset.posY + asset.height
+          ) {
+            this.collectWorldItem(asset);
+            console.log("Colliding with a collectable item");
               return false;
           }
         }
@@ -733,9 +716,25 @@ class followerSprite extends gameSprite {
     this.velocity = 1;
     this.collidable = false; // I just dont want the headache right now
     this.isTargetting = false;
+    this.inventory = [];
 
     // console.log(gameAsset.instances);
     // console.log(this.targetPlayer);
+  }
+  collectWorldItem(asset) { 
+    console.log("anything happening?")
+    console.log(asset);
+    console.log(`Picked up a ${asset.objectType}!`);
+
+    console.log(this.playerId, asset.elmId);
+
+    socket.emit('worldItemCollected', {asset: asset});
+    this.inventory.push(asset); // emit this? or have the server understand the inventory of each?
+    console.log(`${this.elmId} inventory: ${JSON.stringify(this.inventory.length)}`);
+    //gameAsset.delete(asset); // uh generate new flower?
+
+    //asset.removeElm(asset.elmId); /// emit 
+    //this.updateCurrencyCounter(); // need to emit this
   }
   static followTarget(follower, target) {
     follower.isTargetting = true;
@@ -748,41 +747,61 @@ class followerSprite extends gameSprite {
         console.log(`reached destination, clear interval`);
       }
     }, 100);
-}
-move(target) {
-  let dx = Math.abs(target.posX - this.posX);
-  let dy = Math.abs(target.posY - this.posY);
-  let distance = dx + dy;
-
-  // Check if follower is already at the target position
-  if (distance === 0) {
-    console.log(`${this.elmId} caught the thing`);
-    return true;
   }
-  let direction = "";
-  if (dx > dy) {
-    direction = target.posX < this.posX ? "left" : "right";
-  } else {
-    direction = target.posY < this.posY ? "up" : "down";
+  move(target) {
+    // if(this.isColliding(this.posX, this.posY)) {
+    //   // console.log("trying my best");
+    // }
+
+    let dx = Math.abs(target.posX - this.posX);
+    let dy = Math.abs(target.posY - this.posY);
+    let distance = dx + dy;
+
+    // Check if follower is already at the target position
+    if (distance === 0) {
+      console.log(`${this.elmId} caught the thing`);
+      return true;
+    }
+    let direction = "";
+    if (dx > dy) {
+      direction = target.posX < this.posX ? "left" : "right";
+    } else {
+      direction = target.posY < this.posY ? "up" : "down";
+    }
+    if (direction === "left") {
+      this.posX -= this.velocity;
+    } else if (direction === "right") {
+      this.posX += this.velocity;
+    } else if (direction === "up") {
+      this.posY -= this.velocity;
+    } else if (direction === "down") {
+      this.posY += this.velocity;
+    }
+
+    //eventManager.emit('updateClientPosition', { id: this.elmId, x: this.posX, y: this.posY });
+    // socket.emit('updateClientPosition', { id: this.elmId, x: this.posX, y: this.posY });
+
+    // Update follower element position
+    // this.updatePosition(this.posX, this.posY);
+
+    for (let asset of gameAsset.instances) {
+      if (asset !== this && asset.isCollectable) {
+        // console.log('collectable asset here!')
+        if (
+          this.colliderFoot.posX < asset.posX + asset.width &&
+          this.colliderFoot.posX + this.colliderFoot.width > asset.posX &&
+          this.colliderFoot.posY < asset.posY + asset.height &&
+          this.colliderFoot.posY + this.colliderFoot.height > asset.posY
+        ) {
+          this.collectWorldItem(asset);
+          break;
+        }
+      }
+    }
+    eventManager.emit('updateClientPosition', { id: this.elmId, x: this.posX, y: this.posY });
+
+    return false;
   }
-  if (direction === "left") {
-    this.posX -= this.velocity;
-  } else if (direction === "right") {
-    this.posX += this.velocity;
-  } else if (direction === "up") {
-    this.posY -= this.velocity;
-  } else if (direction === "down") {
-    this.posY += this.velocity;
-  }
-
-  eventManager.emit('updateClientPosition', { id: this.elmId, x: this.posX, y: this.posY });
-  // socket.emit('updateClientPosition', { id: this.elmId, x: this.posX, y: this.posY });
-
-  // Update follower element position
-  // this.updatePosition(this.posX, this.posY);
-
-  return false;
-}
 }
 class mainPlayer extends gameSprite {
   constructor(objectType, elmId, posX, posY, width, height, currentDirection) {
