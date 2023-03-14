@@ -30,8 +30,8 @@ let numOfStaticSprites = 5;
 let numOfGameObjects = 5;
 let numOfFlowers = 5;
 
-let mapWidth = 400;
-let mapHeight = 400;
+let mapWidth = 800;
+let mapHeight = 800;
 let minDist = 20;
 
  /**
@@ -51,9 +51,9 @@ function generateRandomCoordinates(numOfInstances, mapWidth) {
 }
 
 let numOfGameAssets = [
-  ['staticSprite', 6], 
-  ['enemySprite', 3],
-  ['flower', 10],
+  ['staticSprite', 14], 
+  ['enemySprite', 7],
+  ['flower', 30],
 ];
 
 let coordinates = {};
@@ -215,20 +215,27 @@ io.on('connection', function (socket) {
         case 'staticSprite':
           for (let i = 0; i < numOfInstances; i++) {
             let staticSprite = new staticSpriteObject(`staticSprite`, `pot${i+1}`, coordinate[i][0], coordinate[i][1], 24, 36);
-            gameObjects.push(staticSprite);
+            objectsToEmit.push(staticSprite);
+            
           }
+          socket.emit('gameObjects', objectsToEmit);
+          objectsToEmit.length = 0;
           break;
         case 'enemySprite':
           for (let i = 0; i < numOfInstances; i++) {
             let slug = new followerSprite(`enemySprite`, `slug${i+1}`, coordinate[i][0], coordinate[i][1], 32, 20);
-            gameObjects.push(slug);
+            objectsToEmit.push(slug);
           }
+          socket.emit('gameObjects', objectsToEmit);
+          objectsToEmit.length = 0;
           break;
         case 'flower':
           for (let i = 0; i < numOfInstances; i++) {
             let flower = new worldItem(`flower`, `flwr${i+1}`, coordinate[i][0], coordinate[i][1], 10, 10);
-            gameObjects.push(flower);
+            objectsToEmit.push(flower);
           }
+          socket.emit('gameObjects', objectsToEmit);
+          objectsToEmit.length = 0;
           break;
         default: 
           console.log(`I do not recognize the objectType: ${objectType}`)
@@ -360,11 +367,16 @@ io.on('connection', function (socket) {
     // console.log('collectedItem: ', itemData);
       socket.broadcast.emit('updateWorldItem', itemData);
 
-      console.log(itemData.elmId);
+      // console.log(itemData.elmId);
 
-      let flower = new worldItem(`flower`, `flwr${itemData.elmId}`, coordinate[i][0], coordinate[i][1], 10, 10);
+      // let flower = new worldItem(`flower`, `flwr${itemData.elmId}`, coordinate[i][0], coordinate[i][1], 10, 10);
             
   });
+
+socket.on('planted', function (itemData) { 
+  // console.log('plantedItem: ', itemData);
+    socket.broadcast.emit('plantedItem', itemData);   
+});
 
   socket.on('disconnect', function () {
     console.log('user disconnected: ', playerId);

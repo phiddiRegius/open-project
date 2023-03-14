@@ -23,8 +23,8 @@ let numOfSpriteElms = 5;
 let minDist = 50;
 
 // DIV ELEMENTS
-let mapWidth = 400;
-let mapHeight = 400;
+let mapWidth = 800;
+let mapHeight = 800;
 let mainContainer = document.createElement('div');
   mainContainer.setAttribute('id', 'mainContainer');
   mainContainer.style.width = window.innerWidth;
@@ -50,9 +50,15 @@ let plantButton = document.createElement('button');
   plantButton.setAttribute('id', 'plantButton');
   plantButton.innerHTML = 'Plant Flower';
 
-  // plantButton.addEventListener('click', function() {
-  //   mainPlayer.plantFlower();
-  // })
+  plantButton.addEventListener('click', function() {
+    for (let i = 0; i < gameAsset.instances.length; i++) {
+      if (gameAsset.instances[i] instanceof mainPlayer) {
+        // call the plantFlower method on the mainPlayer instance
+        gameAsset.instances[i].plantFlower();
+        break; // break out of the loop once the mainPlayer instance is found
+      }
+    }
+  })
 
 // DEBUG PANEL
 // let debugToggle = document.createElement('input');
@@ -471,7 +477,7 @@ class gameSprite extends gameAsset {
       this.posY = nextStepY;
       this.updatePosition();
       this.updateServerPosition();
-      this.renderSheet();
+      // this.renderSheet();
       // this.moveTrain();
     } else {
         // for moving if the dist is less than this.velocity but greater than 0
@@ -569,6 +575,7 @@ class mainPlayer extends gameSprite {
 
     this.spriteSheet = new Image();
     this.spriteSheet.src = 'assets/player/playerSheet.png'
+    // this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
     // this.renderSheet();
     // this.staticSprite;
     let self = this;
@@ -602,11 +609,26 @@ class mainPlayer extends gameSprite {
   updateCurrencyCounter() {
     this.currencyCounter.innerHTML = this.inventory.length; 
   }
-  static plantFlower() {
+  plantFlower() {
     if (this.inventory.length > 0) {
+
       let flowerToPlant = this.inventory.pop();
+
+      flowerToPlant.posX = this.posX + this.width + 10;
+      flowerToPlant.posY = this.posY + this.height - 10;
+      flowerToPlant.elm.style.left = flowerToPlant.posX + 'px';
+      flowerToPlant.elm.style.top = flowerToPlant.posY + 'px';
+
+      flowerToPlant.elm.style.backgroundColor = 'pink';
+      flowerToPlant.collidable = true;
+
+      gameAsset.instances.push(flowerToPlant);
+
+      gameMap.append(flowerToPlant.elm)
       console.log(flowerToPlant);
       this.updateCurrencyCounter();
+
+      socket.emit('planted', {flower: flowerToPlant});
     } else {
       console.log('no flowers in inventory')
     }
@@ -614,8 +636,8 @@ class mainPlayer extends gameSprite {
   collectWorldItem(asset) {
     // if (this.isCollectable && this.isColliding(posX, posY)) {
     // }
-    let exclSound = new Audio('assets/sound/exclamation.mp3');
-        exclSound.play();
+    // let exclSound = new Audio('public/assets/sound/exclamation.mp3');
+    //     exclSound.play();
         
     console.log(asset);
     console.log(`Picked up a ${asset.objectType}!`);
@@ -650,6 +672,15 @@ class mainPlayer extends gameSprite {
   }
   step() { 
     super.step(); 
+    // if (this.faceLeft) {
+    //   this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
+    // } else if (this.faceRight) {
+    //   this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
+    // } else if (this.faceUp) {
+    //   this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
+    // } else if (this.faceDown) {
+    //   this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
+    // }
     // this.flwrTrain.moveTrain(); 
   }
   getElm() {
@@ -657,15 +688,7 @@ class mainPlayer extends gameSprite {
   }
   setFacingDirection(direction) {
     super.setFacingDirection(direction);
-    if (this.faceLeft) {
-      this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionLeft.png)';
-    } else if (this.faceRight) {
-      this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionRight.png)';
-    } else if (this.faceUp) {
-      this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionBack.png)';
-    } else if (this.faceDown) {
-      this.elm.style.backgroundImage = 'url(assets/rabillion/rabillionFront.png)';
-    }
+   
    
 
     // this.flwrTrain.currentDirection = direction;
@@ -856,6 +879,44 @@ socket.on('gameObjects', function (objectInfo) {
         break; // Exit loop once instance is found and updated
       }
     }
+
+  });
+  socket.on('plantedItem', function (itemData) { 
+    console.log(itemData);
+
+    let newElm = document.createElement('div');
+      //  newElm.setAttribute('id', itemData.elmId);
+      newElm.id = itemData.flower.elmId;
+      newElm.style.position = 'absolute';
+      newElm.style.left = itemData.flower.posX + 'px';
+      newElm.style.top = itemData.flower.posY + 'px';
+      newElm.style.width = itemData.flower.width + 'px';
+      newElm.style.height = itemData.flower.height + 'px';
+      newElm.style.backgroundColor = 'pink';
+
+      let objectType = itemData.flower.objectType;
+      let elmId = itemData.flower.elmId;
+      let posX = itemData.flower.posX;
+      let posY = itemData.flower.posY;
+      let width = itemData.flower.width;
+      let height = itemData.flower.height;
+
+        let flower = new worldItem(objectType, elmId, posX, posY, width, height);
+
+        // flower.isCollectable = false;
+        // flower.collidable = true;
+
+        console.log(flower instanceof gameAsset)
+        gameAsset.instances.push(flower);
+
+    // itemData.flower.isCollectable = false;
+    // itemData.flower.collidable = true;
+
+    
+    // console.log(itemData.elm);
+    gameMap.append(newElm);
+
+    console.log(newElm);
 
   });
   socket.on('disconnectUser', function (playerId) {
